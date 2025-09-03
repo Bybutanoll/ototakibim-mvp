@@ -37,6 +37,27 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'OtoTakibim Backend API çalışıyor',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      vehicles: '/api/vehicles',
+      workOrders: '/api/work-orders',
+      obd: '/api/obd',
+      blockchain: '/api/blockchain',
+      arvr: '/api/arvr',
+      payment: '/api/payment'
+    }
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({

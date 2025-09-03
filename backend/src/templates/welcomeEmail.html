@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OtoTakibim'e Hoş Geldiniz!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .welcome-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #1e293b;
+        }
+        .features {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .social-links {
+            margin: 20px 0;
+        }
+        .social-link {
+            display: inline-block;
+            margin: 0 10px;
+            color: #3b82f6;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🚗 OtoTakibim</div>
+        <p>Araç Sağlığınız İçin AI Destekli Çözüm</p>
+    </div>
+    
+    <div class="content">
+        <h1>Hoş Geldiniz, {{firstName}}! 🎉</h1>
+        
+        <p class="welcome-text">
+            OtoTakibim ailesine katıldığınız için teşekkür ederiz. Artık araç bakımınızı 
+            yapay zeka teknolojisi ile takip edebilir, sorunları önceden tespit edebilir 
+            ve servis maliyetlerinizi önemli ölçüde düşürebilirsiniz.
+        </p>
+        
+        <div class="features">
+            <h3>🚀 Başlangıç İçin Yapmanız Gerekenler:</h3>
+            
+            <div class="feature-item">
+                <div class="feature-icon"></div>
+                <span>Profilinizi tamamlayın</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"></div>
+                <span>İlk aracınızı ekleyin</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"></div>
+                <span>AI asistanı test edin</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"></div>
+                <span>Bakım planınızı oluşturun</span>
+            </div>
+        </div>
+        
+        <a href="{{dashboardUrl}}" class="cta-button">Dashboard'a Git</a>
+        
+        <h3>💡 Öne Çıkan Özellikler:</h3>
+        <ul>
+            <li><strong>AI Destekli Tanı:</strong> Araç sorunlarını önceden tespit edin</li>
+            <li><strong>Akıllı Hatırlatıcılar:</strong> Bakım zamanlarını kaçırmayın</li>
+            <li><strong>Detaylı Raporlama:</strong> Araç sağlığınızı takip edin</li>
+            <li><strong>Mobil Uygulama:</strong> Her yerden erişim</li>
+        </ul>
+        
+        <div class="social-links">
+            <h3>📱 Bizi Takip Edin:</h3>
+            <a href="https://wa.me/905368418814" class="social-link">WhatsApp</a>
+            <a href="tel:+905368418814" class="social-link">Telefon</a>
+            <a href="mailto:info@ototakibim.com" class="social-link">Email</a>
+        </div>
+        
+        <div class="footer">
+            <p>Bu email OtoTakibim hesabınız oluşturulduğunda otomatik olarak gönderilmiştir.</p>
+            <p>© 2024 OtoTakibim. Tüm hakları saklıdır.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -21,13 +21,10 @@ const app = express();
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
-    'https://ototakibim-mvp.netlify.app',
-    'https://ototakibim-mvp.netlify.app',
-    'http://localhost:3000'
-  ],
-  credentials: true
+  origin: true, // Tüm origin'lere izin ver
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(compression());
 app.use(morgan('combined'));

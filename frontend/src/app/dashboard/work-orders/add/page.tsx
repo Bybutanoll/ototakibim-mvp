@@ -160,16 +160,30 @@ export default function AddWorkOrderPage() {
     setLoading(true);
 
     try {
-      // TODO: Replace with real API call
-      console.log('Work Order Data:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('https://ototakibim-mvp.onrender.com/api/work-orders', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create work order');
+      }
+
       // Redirect to work orders list
       router.push('/dashboard/work-orders');
     } catch (error) {
       console.error('Error creating work order:', error);
+      alert('İş emri oluşturulurken hata oluştu: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }

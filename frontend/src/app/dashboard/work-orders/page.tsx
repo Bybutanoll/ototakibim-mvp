@@ -107,96 +107,24 @@ export default function WorkOrdersPage() {
     try {
       setLoading(true);
       
-      // Mock data - will be replaced with real API calls
-      const mockWorkOrders: WorkOrder[] = [
-        {
-          _id: '1',
-          title: 'Motor Yağı Değişimi',
-          description: 'Motor yağı ve filtre değişimi, genel kontrol',
-          status: 'completed',
-          priority: 'medium',
-          vehicle: {
-            _id: 'v1',
-            plate: '34 ABC 123',
-            brand: 'BMW',
-            model: '320i',
-            year: 2020,
-            color: 'Beyaz'
-          },
-          customer: {
-            _id: 'c1',
-            firstName: 'Ahmet',
-            lastName: 'Yılmaz',
-            phone: '0532 123 45 67',
-            email: 'ahmet@email.com'
-          },
-          estimatedCost: 800,
-          actualCost: 750,
-          scheduledDate: new Date('2024-09-01'),
-          startDate: new Date('2024-09-01'),
-          completionDate: new Date('2024-09-01'),
-          assignedTechnician: 'Mehmet Usta',
-          workSteps: [
-            { step: 'Motor yağı boşaltma', completed: true },
-            { step: 'Yağ filtresi değişimi', completed: true },
-            { step: 'Yeni yağ ekleme', completed: true },
-            { step: 'Genel kontrol', completed: true }
-          ],
-          parts: [
-            { name: 'Motor Yağı 5W-30', quantity: 1, unitPrice: 200, totalPrice: 200 },
-            { name: 'Yağ Filtresi', quantity: 1, unitPrice: 80, totalPrice: 80 }
-          ],
-          customerNotes: 'Müşteri memnun, tekrar gelecek',
-          technicianNotes: 'Motor durumu iyi, yağ seviyesi normal',
-          photos: [],
-          documents: [],
-          createdAt: new Date('2024-09-01'),
-          updatedAt: new Date('2024-09-01')
-        },
-        {
-          _id: '2',
-          title: 'Fren Sistemi Kontrolü',
-          description: 'Fren balataları kontrolü ve gerekirse değişimi',
-          status: 'in-progress',
-          priority: 'high',
-          vehicle: {
-            _id: 'v2',
-            plate: '06 XYZ 789',
-            brand: 'Mercedes',
-            model: 'C200',
-            year: 2019,
-            color: 'Siyah'
-          },
-          customer: {
-            _id: 'c2',
-            firstName: 'Fatma',
-            lastName: 'Demir',
-            phone: '0533 987 65 43',
-            email: 'fatma@email.com'
-          },
-          estimatedCost: 1200,
-          scheduledDate: new Date('2024-09-02'),
-          startDate: new Date('2024-09-02'),
-          assignedTechnician: 'Ali Usta',
-          workSteps: [
-            { step: 'Fren balataları kontrolü', completed: true },
-            { step: 'Balata değişimi', completed: false },
-            { step: 'Fren sıvısı kontrolü', completed: false },
-            { step: 'Test sürüşü', completed: false }
-          ],
-          parts: [
-            { name: 'Ön Fren Balatası', quantity: 2, unitPrice: 300, totalPrice: 600 },
-            { name: 'Arka Fren Balatası', quantity: 2, unitPrice: 250, totalPrice: 500 }
-          ],
-          technicianNotes: 'Ön balatalar aşınmış, değişim gerekli',
-          photos: [],
-          documents: [],
-          createdAt: new Date('2024-09-02'),
-          updatedAt: new Date('2024-09-02')
-        }
-      ];
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
 
-      setWorkOrders(mockWorkOrders);
+      const response = await fetch('https://ototakibim-mvp.onrender.com/api/work-orders', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch work orders');
+      }
+
+      const data = await response.json();
+      setWorkOrders(data.data || []);
     } catch (error) {
       console.error('Work orders loading error:', error);
     } finally {

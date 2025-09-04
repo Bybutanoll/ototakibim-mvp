@@ -28,7 +28,8 @@ import {
   CheckCircle,
   AlertCircle,
   Star,
-  LogOut
+  LogOut,
+  FileText
 } from 'lucide-react';
 
 interface Vehicle {
@@ -317,6 +318,7 @@ export default function Dashboard() {
               { id: 'payments', name: 'Ödemeler', icon: CreditCard },
               { id: 'inventory', name: 'Envanter', icon: Package },
               { id: 'analytics', name: 'Analitik', icon: BarChart3 },
+              { id: 'reports', name: 'Raporlar', icon: FileText },
               { id: 'smart-pricing', name: 'AI Fiyatlandırma', icon: Target },
               { id: 'security', name: 'Güvenlik', icon: Shield },
               { id: 'mobile', name: 'Mobil', icon: Smartphone },
@@ -713,6 +715,32 @@ export default function Dashboard() {
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Rapor İndir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'reports' && (
+          <div className="bg-white rounded-lg shadow p-8">
+            <div className="text-center">
+              <FileText className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Gelişmiş Raporlama</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Kapsamlı rapor şablonları, PDF/Excel export, e-posta gönderimi ve paylaşım özellikleri ile profesyonel raporlar oluşturun.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => router.push('/dashboard/reports')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Rapor Merkezi
+                </button>
+                <button
+                  onClick={() => router.push('/dashboard/reports')}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Yeni Rapor Oluştur
                 </button>
               </div>
             </div>

@@ -101,102 +101,64 @@ export default function FinancePage() {
     try {
       setLoading(true);
       
-      // Mock data - will be replaced with real API calls
-      const mockFinancialRecords: FinancialRecord[] = [
-        {
-          _id: '1',
-          type: 'income',
-          category: 'Servis Geliri',
-          amount: 2500,
-          description: 'BMW 320i motor yağı değişimi ve bakım',
-          date: new Date('2024-09-01'),
-          relatedWorkOrder: 'WO-001',
-          relatedCustomer: 'Ahmet Yılmaz',
-          paymentMethod: 'credit_card',
-          status: 'completed',
-          invoiceNumber: 'INV-2024-001',
-          notes: 'Premium hizmet paketi',
-          createdAt: new Date('2024-09-01'),
-          updatedAt: new Date('2024-09-01')
-        },
-        {
-          _id: '2',
-          type: 'income',
-          category: 'Parça Satışı',
-          amount: 800,
-          description: 'Fren balatası satışı',
-          date: new Date('2024-09-02'),
-          relatedWorkOrder: 'WO-002',
-          relatedCustomer: 'Fatma Demir',
-          paymentMethod: 'cash',
-          status: 'completed',
-          invoiceNumber: 'INV-2024-002',
-          notes: 'Orijinal parça',
-          createdAt: new Date('2024-09-02'),
-          updatedAt: new Date('2024-09-02')
-        },
-        {
-          _id: '3',
-          type: 'expense',
-          category: 'Parça Alımı',
-          amount: 1200,
-          description: 'Motor yağı ve filtre alımı',
-          date: new Date('2024-09-01'),
-          paymentMethod: 'bank_transfer',
-          status: 'completed',
-          notes: 'Toplu alım - %10 indirim',
-          createdAt: new Date('2024-09-01'),
-          updatedAt: new Date('2024-09-01')
-        },
-        {
-          _id: '4',
-          type: 'expense',
-          category: 'Personel Maaşı',
-          amount: 5000,
-          description: 'Eylül ayı personel maaşları',
-          date: new Date('2024-09-01'),
-          paymentMethod: 'bank_transfer',
-          status: 'completed',
-          notes: '3 teknisyen + 1 sekreter',
-          createdAt: new Date('2024-09-01'),
-          updatedAt: new Date('2024-09-01')
-        }
-      ];
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
 
-      const mockMonthlyStats: MonthlyStats[] = [
-        {
-          month: 'Eylül 2024',
-          income: 3300,
-          expenses: 6200,
-          profit: -2900,
-          workOrders: 8,
-          customers: 12
+      // Load financial records
+      const response = await fetch('https://ototakibim-mvp.onrender.com/api/financial-records', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        {
-          month: 'Ağustos 2024',
-          income: 4200,
-          expenses: 5800,
-          profit: -1600,
-          workOrders: 10,
-          customers: 15
-        },
-        {
-          month: 'Temmuz 2024',
-          income: 3800,
-          expenses: 5200,
-          profit: -1400,
-          workOrders: 9,
-          customers: 13
-        }
-      ];
+      });
 
-      setFinancialRecords(mockFinancialRecords);
-      setMonthlyStats(mockMonthlyStats);
+      if (response.ok) {
+        const data = await response.json();
+        setFinancialRecords(data.data || []);
+        
+        // Calculate monthly stats from records
+        const monthlyStats = calculateMonthlyStats(data.data || []);
+        setMonthlyStats(monthlyStats);
+      } else {
+        // Fallback to empty data
+        setFinancialRecords([]);
+        setMonthlyStats([]);
+      }
     } catch (error) {
       console.error('Financial data loading error:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateMonthlyStats = (records: FinancialRecord[]): MonthlyStats[] => {
+    const monthlyData: { [key: string]: { income: number; expenses: number } } = {};
+    
+    records.forEach(record => {
+      const monthKey = new Date(record.date).toLocaleDateString('tr-TR', { 
+        year: 'numeric', 
+        month: 'long' 
+      });
+      
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = { income: 0, expenses: 0 };
+      }
+      
+      if (record.type === 'income') {
+        monthlyData[monthKey].income += record.amount;
+      } else {
+        monthlyData[monthKey].expenses += record.amount;
+      }
+    });
+    
+    return Object.entries(monthlyData).map(([month, data]) => ({
+      month,
+      income: data.income,
+      expenses: data.expenses,
+      profit: data.income - data.expenses
+    })).sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
   };
 
   const formatCurrency = (amount: number) => {

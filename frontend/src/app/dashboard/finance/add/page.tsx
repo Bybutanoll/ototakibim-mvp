@@ -172,16 +172,30 @@ export default function AddFinancialRecordPage() {
     setLoading(true);
 
     try {
-      // TODO: Replace with real API call
-      console.log('Financial Record Data:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('https://ototakibim-mvp.onrender.com/api/financial-records', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create financial record');
+      }
+
       // Redirect to finance list
       router.push('/dashboard/finance');
     } catch (error) {
       console.error('Error creating financial record:', error);
+      alert('Mali kayıt oluşturulurken hata oluştu: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }

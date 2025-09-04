@@ -60,17 +60,18 @@ export const register = async (req: Request, res: Response) => {
     res.status(201).json({
       status: 'success',
       message: 'Kullanıcı başarıyla oluşturuldu',
-      data: {
-        user: {
-          id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          phone: user.phone,
-          role: user.role
-        },
-        token
-      }
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      },
+      token
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -127,17 +128,18 @@ export const login = async (req: Request, res: Response) => {
     res.status(200).json({
       status: 'success',
       message: 'Giriş başarılı',
-      data: {
-        user: {
-          id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          phone: user.phone,
-          role: user.role
-        },
-        token
-      }
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      },
+      token
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -161,16 +163,16 @@ export const getCurrentUser = async (req: Request, res: Response) => {
 
     res.status(200).json({
       status: 'success',
-      data: {
-        user: {
-          id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          isActive: user.isActive
-        }
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       }
     });
   } catch (error) {

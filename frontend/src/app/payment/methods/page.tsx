@@ -295,7 +295,7 @@ export default function PaymentMethodsPage() {
                       onChange={(e) => setFormData({...formData, cardNumber: formatCardNumber(e.target.value)})}
                       placeholder="1234 5678 9012 3456"
                       maxLength={19}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 ${
                         errors.cardNumber ? 'border-red-300' : 'border-gray-300'
                       }`}
                     />
@@ -318,7 +318,7 @@ export default function PaymentMethodsPage() {
                     value={formData.cardholderName}
                     onChange={(e) => setFormData({...formData, cardholderName: e.target.value})}
                     placeholder="Ad Soyad"
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 ${
                       errors.cardholderName ? 'border-red-300' : 'border-gray-300'
                     }`}
                   />
@@ -344,7 +344,7 @@ export default function PaymentMethodsPage() {
                     }}
                     placeholder="MM/YY"
                     maxLength={5}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 ${
                       errors.expiryDate ? 'border-red-300' : 'border-gray-300'
                     }`}
                   />
@@ -365,7 +365,7 @@ export default function PaymentMethodsPage() {
                       onChange={(e) => setFormData({...formData, cvv: e.target.value.replace(/\D/g, '')})}
                       placeholder="123"
                       maxLength={4}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 ${
                         errors.cvv ? 'border-red-300' : 'border-gray-300'
                       }`}
                     />

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import AIChatbot from '@/components/AIChatbot';
 import { 
   Car, 
   Wrench, 
@@ -14,6 +15,7 @@ import {
   BarChart3,
   Package,
   Smartphone,
+  Target,
   Plus,
   Search,
   Filter,
@@ -294,6 +296,7 @@ export default function Dashboard() {
               { id: 'finance', name: 'Finans', icon: DollarSign },
               { id: 'inventory', name: 'Envanter', icon: Package },
               { id: 'analytics', name: 'Analitik', icon: BarChart3 },
+              { id: 'smart-pricing', name: 'AI Fiyatlandırma', icon: Target },
               { id: 'mobile', name: 'Mobil', icon: Smartphone },
               { id: 'notifications', name: 'Bildirimler', icon: Bell }
             ].map((tab) => (
@@ -668,6 +671,32 @@ export default function Dashboard() {
           </div>
         )}
 
+        {activeTab === 'smart-pricing' && (
+          <div className="bg-white rounded-lg shadow p-8">
+            <div className="text-center">
+              <Target className="w-16 h-16 text-green-600 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Fiyatlandırma</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                AI destekli fiyat optimizasyonu, pazar analizi ve rekabetçi fiyatlandırma önerileri ile gelirinizi artırın.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => router.push('/dashboard/smart-pricing')}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Fiyat Analizi
+                </button>
+                <button
+                  onClick={() => router.push('/dashboard/smart-pricing')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Pazar Analizi
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'mobile' && (
           <div className="bg-white rounded-lg shadow p-8">
             <div className="text-center">
@@ -720,6 +749,9 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* AI Chatbot */}
+      <AIChatbot />
     </div>
   );
 }

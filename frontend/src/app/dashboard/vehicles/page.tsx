@@ -464,7 +464,10 @@ export default function VehiclesPage() {
 
                         {/* Action Buttons */}
                         <div className="mt-6 flex justify-end space-x-3">
-                          <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                          <button 
+                            onClick={() => router.push(`/dashboard/vehicles/${vehicle._id}`)}
+                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">

@@ -65,7 +65,7 @@ interface DashboardStats {
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, state } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalVehicles: 0,
     activeWorkOrders: 0,
@@ -80,11 +80,18 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Redirect to login if not authenticated
   useEffect(() => {
-    if (user) {
+    if (!state.isLoading && !state.isAuthenticated) {
+      router.push('/login');
+    }
+  }, [state.isLoading, state.isAuthenticated, router]);
+
+  useEffect(() => {
+    if (user && state.isAuthenticated) {
       loadDashboardData();
     }
-  }, [user]);
+  }, [user, state.isAuthenticated]);
 
   const loadDashboardData = async () => {
     try {
@@ -226,15 +233,23 @@ export default function Dashboard() {
     }).format(new Date(date));
   };
 
-  if (loading) {
+  // Show loading while auth is being checked or data is loading
+  if (state.isLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Dashboard yükleniyor...</p>
+          <p className="mt-4 text-gray-600">
+            {state.isLoading ? 'Kimlik doğrulanıyor...' : 'Dashboard yükleniyor...'}
+          </p>
         </div>
       </div>
     );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!state.isAuthenticated || !user) {
+    return null;
   }
 
   return (

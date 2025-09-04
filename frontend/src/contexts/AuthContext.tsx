@@ -42,6 +42,7 @@ export interface RegisterCredentials {
 
 export interface AuthContextType {
   state: AuthState;
+  user: User | null; // Add user property for easier access
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => void;
@@ -143,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const token = localStorage.getItem('ototakibim_token');
         if (token) {
           // Verify token with backend
-          const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+          const response = await fetch(`${API_BASE_URL}/auth/me`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json',
@@ -291,6 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextType = {
     state,
+    user: state.user, // Add user property for easier access
     login,
     register,
     logout,

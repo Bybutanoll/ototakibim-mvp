@@ -17,8 +17,19 @@ import {
   Clock,
   MapPin,
   Save,
-  X
+  X,
+  Brain,
+  AlertTriangle,
+  TrendingUp,
+  CheckCircle
 } from 'lucide-react';
+import { 
+  generateMaintenancePredictions, 
+  getPriorityColor, 
+  getPriorityLabel,
+  type MaintenancePrediction,
+  type VehicleData 
+} from '@/lib/maintenancePredictions';
 
 interface Vehicle {
   _id: string;
@@ -65,6 +76,7 @@ export default function VehicleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
   const [editingRecord, setEditingRecord] = useState<string | null>(null);
+  const [predictions, setPredictions] = useState<MaintenancePrediction[]>([]);
   const [maintenanceForm, setMaintenanceForm] = useState<MaintenanceRecord>({
     date: '',
     type: 'service',
@@ -101,6 +113,29 @@ export default function VehicleDetailPage() {
 
       const data = await response.json();
       setVehicle(data.data);
+      
+      // Generate AI predictions
+      if (data.data) {
+        const vehicleData: VehicleData = {
+          currentMileage: data.data.mileage,
+          lastMaintenanceDate: data.data.maintenanceHistory.length > 0 
+            ? new Date(data.data.maintenanceHistory[0].date) 
+            : new Date(),
+          lastMaintenanceMileage: data.data.maintenanceHistory.length > 0 
+            ? data.data.maintenanceHistory[0].mileage 
+            : 0,
+          fuelType: data.data.fuelType,
+          year: data.data.year,
+          brand: data.data.brand,
+          model: data.data.vehicleModel
+        };
+        
+        const aiPredictions = generateMaintenancePredictions(
+          vehicleData, 
+          data.data.maintenanceHistory || []
+        );
+        setPredictions(aiPredictions);
+      }
     } catch (error) {
       console.error('Vehicle loading error:', error);
       alert('Araç yüklenirken hata oluştu: ' + (error as Error).message);
@@ -239,7 +274,7 @@ export default function VehicleDetailPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Vehicle Info */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow p-6">
@@ -288,6 +323,54 @@ export default function VehicleDetailPage() {
                 <div className="mt-6">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">Açıklama</h4>
                   <p className="text-gray-600 text-sm">{vehicle.description}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* AI Predictions */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <Brain className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-medium text-gray-900">AI Tahminleri</h3>
+              </div>
+              
+              {predictions.length === 0 ? (
+                <div className="text-center py-4">
+                  <TrendingUp className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">Tahmin yükleniyor...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {predictions.slice(0, 5).map((prediction, index) => (
+                    <div key={index} className={`border rounded-lg p-3 ${getPriorityColor(prediction.priority)}`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-sm">{prediction.title}</h4>
+                        <span className="text-xs font-medium">
+                          {getPriorityLabel(prediction.priority)}
+                        </span>
+                      </div>
+                      <div className="text-xs space-y-1">
+                        <div className="flex justify-between">
+                          <span>Tahmini Maliyet:</span>
+                          <span className="font-medium">{formatCurrency(prediction.estimatedCost)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Kalan Gün:</span>
+                          <span className="font-medium">{prediction.daysUntilDue} gün</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Kalan KM:</span>
+                          <span className="font-medium">{prediction.kmUntilDue.toLocaleString('tr-TR')} km</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Güven:</span>
+                          <span className="font-medium">%{prediction.confidence}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

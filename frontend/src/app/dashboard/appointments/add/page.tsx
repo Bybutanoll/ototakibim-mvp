@@ -162,16 +162,30 @@ export default function AddAppointmentPage() {
     setLoading(true);
 
     try {
-      // TODO: Replace with real API call
-      console.log('Appointment Data:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('https://ototakibim-mvp.onrender.com/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create appointment');
+      }
+
       // Redirect to appointments list
       router.push('/dashboard/appointments');
     } catch (error) {
       console.error('Error creating appointment:', error);
+      alert('Randevu oluşturulurken hata oluştu: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }

@@ -117,116 +117,24 @@ export default function AppointmentsPage() {
     try {
       setLoading(true);
       
-      // Mock data - will be replaced with real API calls
-      const mockAppointments: Appointment[] = [
-        {
-          _id: '1',
-          title: 'Motor Yağı Değişimi',
-          description: 'Motor yağı ve filtre değişimi, genel kontrol',
-          serviceType: 'Motor Yağı Değişimi',
-          status: 'confirmed',
-          priority: 'medium',
-          vehicle: {
-            _id: 'v1',
-            plate: '34 ABC 123',
-            brand: 'BMW',
-            model: '320i',
-            year: 2020,
-            color: 'Beyaz'
-          },
-          customer: {
-            _id: 'c1',
-            firstName: 'Ahmet',
-            lastName: 'Yılmaz',
-            phone: '0532 123 45 67',
-            email: 'ahmet@email.com'
-          },
-          scheduledDate: new Date('2024-09-03'),
-          startTime: '09:00',
-          endTime: '11:00',
-          estimatedDuration: 120,
-          assignedTechnician: 'Mehmet Usta',
-          customerNotes: 'Sabah erken gelmek istiyor',
-          reminderSent: true,
-          photos: [],
-          documents: [],
-          createdAt: new Date('2024-09-01'),
-          updatedAt: new Date('2024-09-01')
-        },
-        {
-          _id: '2',
-          title: 'Fren Sistemi Kontrolü',
-          description: 'Fren balataları kontrolü ve gerekirse değişimi',
-          serviceType: 'Fren Sistemi Kontrolü',
-          status: 'scheduled',
-          priority: 'high',
-          vehicle: {
-            _id: 'v2',
-            plate: '06 XYZ 789',
-            brand: 'Mercedes',
-            model: 'C200',
-            year: 2019,
-            color: 'Siyah'
-          },
-          customer: {
-            _id: 'c2',
-            firstName: 'Fatma',
-            lastName: 'Demir',
-            phone: '0533 987 65 43',
-            email: 'fatma@email.com'
-          },
-          scheduledDate: new Date('2024-09-04'),
-          startTime: '14:00',
-          endTime: '16:00',
-          estimatedDuration: 120,
-          assignedTechnician: 'Ali Usta',
-          customerNotes: 'Öğleden sonra uygun',
-          reminderSent: false,
-          photos: [],
-          documents: [],
-          createdAt: new Date('2024-09-02'),
-          updatedAt: new Date('2024-09-02')
-        },
-        {
-          _id: '3',
-          title: 'Genel Bakım',
-          description: 'Yıllık genel bakım ve kontrol',
-          serviceType: 'Genel Bakım',
-          status: 'completed',
-          priority: 'low',
-          vehicle: {
-            _id: 'v3',
-            plate: '35 DEF 456',
-            brand: 'Audi',
-            model: 'A4',
-            year: 2021,
-            color: 'Gri'
-          },
-          customer: {
-            _id: 'c3',
-            firstName: 'Mehmet',
-            lastName: 'Kaya',
-            phone: '0534 555 44 33',
-            email: 'mehmet@email.com'
-          },
-          scheduledDate: new Date('2024-09-02'),
-          startTime: '10:00',
-          endTime: '12:00',
-          estimatedDuration: 120,
-          actualStartTime: '10:15',
-          actualEndTime: '11:45',
-          assignedTechnician: 'Hasan Usta',
-          customerNotes: 'Müşteri memnun',
-          technicianNotes: 'Araç durumu iyi, küçük ayarlamalar yapıldı',
-          reminderSent: true,
-          photos: [],
-          documents: [],
-          createdAt: new Date('2024-09-01'),
-          updatedAt: new Date('2024-09-02')
-        }
-      ];
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
 
-      setAppointments(mockAppointments);
+      const response = await fetch('https://ototakibim-mvp.onrender.com/api/appointments', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch appointments');
+      }
+
+      const data = await response.json();
+      setAppointments(data.data || []);
     } catch (error) {
       console.error('Appointments loading error:', error);
     } finally {

@@ -11,6 +11,7 @@ import {
   DollarSign, 
   TrendingUp,
   Bell,
+  BarChart3,
   Plus,
   Search,
   Filter,
@@ -289,6 +290,7 @@ export default function Dashboard() {
               { id: 'appointments', name: 'Randevular', icon: Calendar },
               { id: 'customers', name: 'Müşteriler', icon: Users },
               { id: 'finance', name: 'Finans', icon: DollarSign },
+              { id: 'analytics', name: 'Analitik', icon: BarChart3 },
               { id: 'notifications', name: 'Bildirimler', icon: Bell }
             ].map((tab) => (
               <button
@@ -604,6 +606,32 @@ export default function Dashboard() {
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Yeni Finansal Kayıt
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="bg-white rounded-lg shadow p-8">
+            <div className="text-center">
+              <BarChart3 className="w-16 h-16 text-indigo-600 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Analitik & Raporlar</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Detaylı performans analizi, finansal raporlar ve müşteri analitikleri ile işletmenizi optimize edin.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => router.push('/dashboard/analytics')}
+                  className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Analitikleri Görüntüle
+                </button>
+                <button
+                  onClick={() => router.push('/dashboard/analytics')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Rapor İndir
                 </button>
               </div>
             </div>

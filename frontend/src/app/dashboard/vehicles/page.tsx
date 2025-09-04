@@ -34,21 +34,27 @@ interface Vehicle {
   _id: string;
   plate: string;
   brand: string;
-  model: string;
+  vehicleModel: string;
   year: number;
   color: string;
   vin: string;
-  engine: string;
-  fuel: string;
-  transmission: string;
+  engineSize: string;
+  fuelType: 'gasoline' | 'diesel' | 'electric' | 'hybrid' | 'lpg';
+  transmission: 'manual' | 'automatic' | 'semi-automatic';
   mileage: number;
   owner: Customer;
-  description: string;
+  description?: string;
   photos: string[];
-  documents: string[];
-  lastMaintenance: Date;
-  nextMaintenance: Date;
-  status: 'active' | 'maintenance' | 'retired';
+  documents: any[];
+  maintenanceHistory: Array<{
+    date: Date;
+    type: 'service' | 'repair' | 'inspection';
+    description: string;
+    cost: number;
+    mileage: number;
+    workshop?: string;
+  }>;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,95 +90,25 @@ export default function VehiclesPage() {
     try {
       setLoading(true);
 
-      // Mock data - will be replaced with real API call
-      const mockVehicles: Vehicle[] = [
-        {
-          _id: '1',
-          plate: '34 ABC 123',
-          brand: 'BMW',
-          model: '320i',
-          year: 2020,
-          color: 'Beyaz',
-          vin: 'WBA8E9G50JNT12345',
-          engine: '2.0L 4-Cylinder Turbo',
-          fuel: 'Benzin',
-          transmission: 'Otomatik',
-          mileage: 45000,
-          owner: {
-            _id: '1',
-            firstName: 'Ahmet',
-            lastName: 'Yılmaz',
-            phone: '0532 123 45 67',
-            email: 'ahmet@email.com'
-          },
-          description: 'Lüks sedan, düzenli bakım yapılmış',
-          photos: [],
-          documents: [],
-          lastMaintenance: new Date('2024-08-15'),
-          nextMaintenance: new Date('2024-11-15'),
-          status: 'active',
-          createdAt: new Date('2020-03-15'),
-          updatedAt: new Date('2024-08-15')
-        },
-        {
-          _id: '2',
-          plate: '06 XYZ 789',
-          brand: 'Mercedes',
-          model: 'C200',
-          year: 2019,
-          color: 'Siyah',
-          vin: 'WDDWF4HB0FR123456',
-          engine: '2.0L 4-Cylinder Turbo',
-          fuel: 'Benzin',
-          transmission: 'Otomatik',
-          mileage: 68000,
-          owner: {
-            _id: '2',
-            firstName: 'Fatma',
-            lastName: 'Demir',
-            phone: '0533 987 65 43',
-            email: 'fatma@email.com'
-          },
-          description: 'Premium sedan, konfor odaklı',
-          photos: [],
-          documents: [],
-          lastMaintenance: new Date('2024-07-20'),
-          nextMaintenance: new Date('2024-10-20'),
-          status: 'active',
-          createdAt: new Date('2019-06-10'),
-          updatedAt: new Date('2024-07-20')
-        },
-        {
-          _id: '3',
-          plate: '35 DEF 456',
-          brand: 'Audi',
-          model: 'A4',
-          year: 2021,
-          color: 'Gri',
-          vin: 'WAUZZZ8K9KA123789',
-          engine: '2.0L 4-Cylinder Turbo',
-          fuel: 'Dizel',
-          transmission: 'Otomatik',
-          mileage: 32000,
-          owner: {
-            _id: '3',
-            firstName: 'Mehmet',
-            lastName: 'Kaya',
-            phone: '0534 555 44 33',
-            email: 'mehmet@email.com'
-          },
-          description: 'Sport sedan, performans odaklı',
-          photos: [],
-          documents: [],
-          lastMaintenance: new Date('2024-09-01'),
-          nextMaintenance: new Date('2024-12-01'),
-          status: 'maintenance',
-          createdAt: new Date('2021-02-28'),
-          updatedAt: new Date('2024-09-01')
-        }
-      ];
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
 
-      setVehicles(mockVehicles);
+      const response = await fetch('https://ototakibim-mvp.onrender.com/api/vehicles', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch vehicles');
+      }
+
+      const data = await response.json();
+      setVehicles(data.data || []);
     } catch (error) {
       console.error('Vehicles loading error:', error);
     } finally {
@@ -202,15 +138,48 @@ export default function VehiclesPage() {
     return new Intl.NumberFormat('tr-TR').format(mileage);
   };
 
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    if (!confirm('Bu aracı silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`https://ototakibim-mvp.onrender.com/api/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete vehicle');
+      }
+
+      // Remove vehicle from local state
+      setVehicles(vehicles.filter(v => v._id !== vehicleId));
+      alert('Araç başarıyla silindi');
+    } catch (error) {
+      console.error('Delete vehicle error:', error);
+      alert('Araç silinirken hata oluştu: ' + (error as Error).message);
+    }
+  };
+
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesSearch = vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          vehicle.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         vehicle.vehicleModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          vehicle.owner.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          vehicle.owner.lastName.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesBrand = brandFilter === 'all' || vehicle.brand === brandFilter;
-    const matchesStatus = statusFilter === 'all' || vehicle.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || (vehicle.isActive ? 'active' : 'retired') === statusFilter;
     const matchesYear = yearFilter === 'all' || vehicle.year.toString() === yearFilter;
 
     return matchesSearch && matchesBrand && matchesStatus && matchesYear;
@@ -396,15 +365,15 @@ export default function VehiclesPage() {
                           </div>
                           <div>
                             <h4 className="text-lg font-medium text-gray-900">
-                              {vehicle.brand} {vehicle.model}
+                              {vehicle.brand} {vehicle.vehicleModel}
                             </h4>
                             <p className="text-gray-600">{vehicle.plate}</p>
                           </div>
                         </div>
 
                         <div className="flex items-center space-x-2">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(vehicle.status)}`}>
-                            {getStatusLabel(vehicle.status)}
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(vehicle.isActive ? 'active' : 'retired')}`}>
+                            {getStatusLabel(vehicle.isActive ? 'active' : 'retired')}
                           </span>
                           <button
                             onClick={() => toggleVehicleExpansion(vehicle._id)}
@@ -457,11 +426,11 @@ export default function VehiclesPage() {
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Motor:</span>
-                                <span className="font-medium">{vehicle.engine}</span>
+                                <span className="font-medium">{vehicle.engineSize}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Yakıt:</span>
-                                <span className="font-medium">{vehicle.fuel}</span>
+                                <span className="font-medium">{vehicle.fuelType}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Vites:</span>
@@ -501,7 +470,10 @@ export default function VehiclesPage() {
                           <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-gray-400 hover:text-red-600 transition-colors">
+                          <button 
+                            onClick={() => handleDeleteVehicle(vehicle._id)}
+                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

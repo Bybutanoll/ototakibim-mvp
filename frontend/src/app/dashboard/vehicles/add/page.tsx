@@ -185,12 +185,44 @@ export default function AddVehiclePage() {
     
     setLoading(true);
     try {
-      // TODO: API call to create vehicle
-      console.log('Vehicle data:', formData);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      router.push('/dashboard?tab=vehicles');
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Prepare form data for API
+      const vehicleData = {
+        plate: formData.plate,
+        brand: formData.brand,
+        vehicleModel: formData.model,
+        year: formData.year,
+        vin: formData.vin,
+        engineSize: formData.engineSize,
+        fuelType: formData.fuelType,
+        transmission: formData.transmission,
+        mileage: formData.mileage,
+        color: formData.color,
+        description: formData.description
+      };
+
+      const response = await fetch('https://ototakibim-mvp.onrender.com/api/vehicles', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(vehicleData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create vehicle');
+      }
+
+      router.push('/dashboard/vehicles');
     } catch (error) {
       console.error('Vehicle creation error:', error);
+      alert('Araç oluşturulurken hata oluştu: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }

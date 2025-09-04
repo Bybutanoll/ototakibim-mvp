@@ -80,110 +80,24 @@ export default function CustomersPage() {
     try {
       setLoading(true);
       
-      // Mock data - will be replaced with real API calls
-      const mockCustomers: Customer[] = [
-        {
-          _id: '1',
-          firstName: 'Ahmet',
-          lastName: 'Yılmaz',
-          email: 'ahmet@email.com',
-          phone: '0532 123 45 67',
-          company: 'Yılmaz Ltd. Şti.',
-          address: {
-            street: 'Atatürk Caddesi No:123',
-            city: 'İstanbul',
-            state: 'Kadıköy',
-            zipCode: '34700',
-            country: 'Türkiye'
-          },
-          vehicles: [
-            {
-              _id: 'v1',
-              plate: '34 ABC 123',
-              brand: 'BMW',
-              model: '320i',
-              year: 2020
-            },
-            {
-              _id: 'v2',
-              plate: '34 DEF 456',
-              brand: 'Mercedes',
-              model: 'C200',
-              year: 2019
-            }
-          ],
-          totalSpent: 8500,
-          lastVisit: new Date('2024-09-01'),
-          status: 'vip',
-          loyaltyPoints: 1250,
-          notes: 'VIP müşteri, premium hizmet tercih ediyor',
-          createdAt: new Date('2023-01-15'),
-          updatedAt: new Date('2024-09-01')
-        },
-        {
-          _id: '2',
-          firstName: 'Fatma',
-          lastName: 'Demir',
-          email: 'fatma@email.com',
-          phone: '0533 987 65 43',
-          address: {
-            street: 'İnönü Sokak No:45',
-            city: 'Ankara',
-            state: 'Çankaya',
-            zipCode: '06690',
-            country: 'Türkiye'
-          },
-          vehicles: [
-            {
-              _id: 'v3',
-              plate: '06 XYZ 789',
-              brand: 'Audi',
-              model: 'A4',
-              year: 2021
-            }
-          ],
-          totalSpent: 3200,
-          lastVisit: new Date('2024-08-28'),
-          status: 'active',
-          loyaltyPoints: 480,
-          notes: 'Düzenli bakım yaptırıyor',
-          createdAt: new Date('2023-06-20'),
-          updatedAt: new Date('2024-08-28')
-        },
-        {
-          _id: '3',
-          firstName: 'Mehmet',
-          lastName: 'Kaya',
-          email: 'mehmet@email.com',
-          phone: '0534 555 44 33',
-          company: 'Kaya Otomotiv',
-          address: {
-            street: 'Sanayi Caddesi No:78',
-            city: 'İzmir',
-            state: 'Bornova',
-            zipCode: '35000',
-            country: 'Türkiye'
-          },
-          vehicles: [
-            {
-              _id: 'v4',
-              plate: '35 GHI 012',
-              brand: 'Volkswagen',
-              model: 'Passat',
-              year: 2018
-            }
-          ],
-          totalSpent: 1800,
-          lastVisit: new Date('2024-07-15'),
-          status: 'active',
-          loyaltyPoints: 270,
-          notes: 'Şirket araçları için toplu hizmet alıyor',
-          createdAt: new Date('2024-01-10'),
-          updatedAt: new Date('2024-07-15')
-        }
-      ];
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
 
-      setCustomers(mockCustomers);
+      const response = await fetch('https://ototakibim-mvp.onrender.com/api/customers', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch customers');
+      }
+
+      const data = await response.json();
+      setCustomers(data.data || []);
     } catch (error) {
       console.error('Customers loading error:', error);
     } finally {
@@ -199,6 +113,39 @@ export default function CustomersPage() {
   const getStatusLabel = (status: string) => {
     const statusOption = statusOptions.find(s => s.value === status);
     return statusOption ? statusOption.label : status;
+  };
+
+  const handleDeleteCustomer = async (customerId: string) => {
+    if (!confirm('Bu müşteriyi silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`https://ototakibim-mvp.onrender.com/api/customers/${customerId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete customer');
+      }
+
+      // Reload customers list
+      await loadCustomers();
+      alert('Müşteri başarıyla silindi');
+    } catch (error) {
+      console.error('Delete customer error:', error);
+      alert('Müşteri silinirken hata oluştu: ' + (error as Error).message);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -439,7 +386,10 @@ export default function CustomersPage() {
                         <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-red-600 transition-colors">
+                        <button 
+                          onClick={() => handleDeleteCustomer(customer._id)}
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

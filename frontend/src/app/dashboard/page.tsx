@@ -17,6 +17,7 @@ import {
   Smartphone,
   Target,
   Shield,
+  CreditCard,
   Plus,
   Search,
   Filter,
@@ -295,6 +296,7 @@ export default function Dashboard() {
               { id: 'appointments', name: 'Randevular', icon: Calendar },
               { id: 'customers', name: 'Müşteriler', icon: Users },
               { id: 'finance', name: 'Finans', icon: DollarSign },
+              { id: 'payments', name: 'Ödemeler', icon: CreditCard },
               { id: 'inventory', name: 'Envanter', icon: Package },
               { id: 'analytics', name: 'Analitik', icon: BarChart3 },
               { id: 'smart-pricing', name: 'AI Fiyatlandırma', icon: Target },
@@ -615,6 +617,32 @@ export default function Dashboard() {
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Yeni Finansal Kayıt
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'payments' && (
+          <div className="bg-white rounded-lg shadow p-8">
+            <div className="text-center">
+              <CreditCard className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Ödeme Yönetimi</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Fatura oluşturma, ödeme takibi, çoklu ödeme yöntemleri ve finansal raporlama ile ödemelerinizi yönetin.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => router.push('/dashboard/payments')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Ödeme Merkezi
+                </button>
+                <button
+                  onClick={() => router.push('/dashboard/payments')}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Fatura Oluştur
                 </button>
               </div>
             </div>

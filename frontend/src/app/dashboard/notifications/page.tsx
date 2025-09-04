@@ -20,6 +20,7 @@ import {
   Filter,
   Search
 } from 'lucide-react';
+import PushNotificationManager from '@/components/PushNotificationManager';
 
 interface Notification {
   _id: string;
@@ -306,6 +307,11 @@ export default function NotificationsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Push Notifications */}
+        <div className="mb-8">
+          <PushNotificationManager />
+        </div>
+
         {/* Filters */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="p-6">

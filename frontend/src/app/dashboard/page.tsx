@@ -850,6 +850,180 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {activeTab === 'mobile' && (
+          <div className="space-y-6">
+            {/* Mobile Features Overview */}
+            <div className="bg-white rounded-lg shadow p-8">
+              <div className="text-center mb-8">
+                <Smartphone className="w-16 h-16 text-cyan-600 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Mobil Uygulama Özellikleri</h3>
+                <p className="text-gray-600 max-w-2xl mx-auto">
+                  PWA teknolojisi ile geliştirilmiş, offline çalışabilen, push bildirim destekli mobil deneyim.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="text-center p-6 bg-blue-50 rounded-lg">
+                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white text-xl">📱</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">PWA Desteği</h4>
+                  <p className="text-sm text-gray-600">Ana ekrana eklenebilir, native app deneyimi</p>
+                </div>
+
+                <div className="text-center p-6 bg-green-50 rounded-lg">
+                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white text-xl">🔄</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Offline Çalışma</h4>
+                  <p className="text-sm text-gray-600">İnternet olmadan da veri girişi ve görüntüleme</p>
+                </div>
+
+                <div className="text-center p-6 bg-purple-50 rounded-lg">
+                  <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white text-xl">🔔</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Push Bildirimler</h4>
+                  <p className="text-sm text-gray-600">Gerçek zamanlı bildirimler ve hatırlatmalar</p>
+                </div>
+
+                <div className="text-center p-6 bg-orange-50 rounded-lg">
+                  <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white text-xl">📊</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Mobil Dashboard</h4>
+                  <p className="text-sm text-gray-600">Touch-friendly arayüz ve kolay navigasyon</p>
+                </div>
+
+                <div className="text-center p-6 bg-red-50 rounded-lg">
+                  <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white text-xl">⚡</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Hızlı Erişim</h4>
+                  <p className="text-sm text-gray-600">Kısayollar ve hızlı işlem butonları</p>
+                </div>
+
+                <div className="text-center p-6 bg-indigo-50 rounded-lg">
+                  <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <span className="text-white text-xl">🔄</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Otomatik Senkronizasyon</h4>
+                  <p className="text-sm text-gray-600">Bağlantı geri geldiğinde otomatik veri senkronizasyonu</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Installation Instructions */}
+            <div className="bg-white rounded-lg shadow p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Mobil Uygulamayı Yükle</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                    <span className="text-2xl mr-3">📱</span>
+                    iOS (iPhone/iPad)
+                  </h4>
+                  <ol className="space-y-3 text-sm text-gray-600">
+                    <li className="flex items-start">
+                      <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+                      Safari tarayıcısında siteyi açın
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                      Paylaş butonuna (⬆️) dokunun
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                      "Ana Ekrana Ekle" seçeneğini seçin
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">4</span>
+                      "Ekle" butonuna dokunun
+                    </li>
+                  </ol>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+                    <span className="text-2xl mr-3">🤖</span>
+                    Android
+                  </h4>
+                  <ol className="space-y-3 text-sm text-gray-600">
+                    <li className="flex items-start">
+                      <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+                      Chrome tarayıcısında siteyi açın
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                      Menü butonuna (⋮) dokunun
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                      "Ana ekrana ekle" seçeneğini seçin
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">4</span>
+                      "Ekle" butonuna dokunun
+                    </li>
+                  </ol>
+                </div>
+              </div>
+
+              <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <span className="text-blue-600 text-xl">💡</span>
+                  <div>
+                    <h4 className="font-medium text-blue-900 mb-2">İpucu</h4>
+                    <p className="text-sm text-blue-800">
+                      Uygulamayı ana ekrana ekledikten sonra, native mobil uygulama gibi kullanabilirsiniz. 
+                      Offline çalışma, push bildirimler ve hızlı erişim özelliklerinin tümü aktif olacaktır.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-lg shadow p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Mobil Hızlı İşlemler</h3>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button
+                  onClick={() => router.push('/dashboard/vehicles/add')}
+                  className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <span className="text-2xl mb-2">🚗</span>
+                  <span className="text-sm font-medium text-blue-900">Araç Ekle</span>
+                </button>
+                
+                <button
+                  onClick={() => router.push('/dashboard/appointments/add')}
+                  className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <span className="text-2xl mb-2">📅</span>
+                  <span className="text-sm font-medium text-green-900">Randevu Al</span>
+                </button>
+                
+                <button
+                  onClick={() => router.push('/dashboard/work-orders/add')}
+                  className="flex flex-col items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                >
+                  <span className="text-2xl mb-2">🔧</span>
+                  <span className="text-sm font-medium text-orange-900">İş Emri</span>
+                </button>
+                
+                <button
+                  onClick={() => router.push('/dashboard/customers/add')}
+                  className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                >
+                  <span className="text-2xl mb-2">👤</span>
+                  <span className="text-sm font-medium text-purple-900">Müşteri Ekle</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* AI Chatbot */}

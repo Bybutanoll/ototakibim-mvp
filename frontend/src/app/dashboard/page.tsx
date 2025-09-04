@@ -10,6 +10,7 @@ import {
   Users, 
   DollarSign, 
   TrendingUp,
+  Bell,
   Plus,
   Search,
   Filter,
@@ -287,7 +288,8 @@ export default function Dashboard() {
               { id: 'work-orders', name: 'İş Emirleri', icon: Wrench },
               { id: 'appointments', name: 'Randevular', icon: Calendar },
               { id: 'customers', name: 'Müşteriler', icon: Users },
-              { id: 'finance', name: 'Finans', icon: DollarSign }
+              { id: 'finance', name: 'Finans', icon: DollarSign },
+              { id: 'notifications', name: 'Bildirimler', icon: Bell }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -602,6 +604,32 @@ export default function Dashboard() {
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Yeni Finansal Kayıt
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <div className="bg-white rounded-lg shadow p-8">
+            <div className="text-center">
+              <Bell className="w-16 h-16 text-purple-600 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Bildirim Yönetimi</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                SMS, Email ve Push bildirimlerini yönetin, şablonlar oluşturun ve müşteri iletişimini otomatikleştirin.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => router.push('/dashboard/notifications')}
+                  className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Bildirimleri Görüntüle
+                </button>
+                <button
+                  onClick={() => router.push('/dashboard/notifications')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Yeni Bildirim Gönder
                 </button>
               </div>
             </div>

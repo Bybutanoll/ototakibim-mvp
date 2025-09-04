@@ -26,7 +26,7 @@ interface Vehicle {
   _id: string;
   plate: string;
   brand: string;
-  model: string;
+  vehicleModel: string;
   year: number;
   color: string;
   mileage: number;
@@ -97,89 +97,80 @@ export default function Dashboard() {
     try {
       setLoading(true);
       
-      // Mock data for now - will be replaced with real API calls
-      const mockStats: DashboardStats = {
-        totalVehicles: 3,
-        activeWorkOrders: 2,
-        upcomingAppointments: 1,
-        monthlyRevenue: 2500,
-        completedServices: 15,
-        customerSatisfaction: 4.8
-      };
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
 
-      const mockVehicles: Vehicle[] = [
-        {
-          _id: '1',
-          plate: '34 ABC 123',
-          brand: 'BMW',
-          model: '320i',
-          year: 2020,
-          color: 'Beyaz',
-          mileage: 45000,
-          lastService: new Date('2024-08-15')
+      // Load vehicles data
+      const vehiclesResponse = await fetch('https://ototakibim-mvp.onrender.com/api/vehicles', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        {
-          _id: '2',
-          plate: '06 XYZ 789',
-          brand: 'Mercedes',
-          model: 'C200',
-          year: 2019,
-          color: 'Siyah',
-          mileage: 62000,
-          lastService: new Date('2024-07-20')
-        },
-        {
-          _id: '3',
-          plate: '35 DEF 456',
-          brand: 'Audi',
-          model: 'A4',
-          year: 2021,
-          color: 'Gri',
-          mileage: 28000,
-          lastService: new Date('2024-09-01')
-        }
-      ];
+      });
 
-      const mockWorkOrders: WorkOrder[] = [
-        {
-          _id: '1',
-          title: 'Fren Sistemi Bakımı',
-          status: 'in-progress',
-          priority: 'high',
-          vehicle: mockVehicles[0],
-          estimatedCost: 800,
-          scheduledDate: new Date('2024-09-05'),
-          assignedTechnician: 'Ahmet Teknisyen'
-        },
-        {
-          _id: '2',
-          title: 'Yağ Değişimi',
-          status: 'pending',
-          priority: 'medium',
-          vehicle: mockVehicles[1],
-          estimatedCost: 300,
-          scheduledDate: new Date('2024-09-10')
-        }
-      ];
+      if (vehiclesResponse.ok) {
+        const vehiclesData = await vehiclesResponse.json();
+        const vehiclesList = vehiclesData.data || [];
+        setVehicles(vehiclesList);
 
-      const mockAppointments: Appointment[] = [
-        {
-          _id: '1',
-          title: 'Genel Kontrol',
-          status: 'scheduled',
-          scheduledDate: new Date('2024-09-08'),
-          startTime: '10:00',
-          vehicle: mockVehicles[2],
-          serviceType: 'inspection'
-        }
-      ];
+        // Calculate stats from real data
+        const totalVehicles = vehiclesList.length;
+        const activeWorkOrders = 0; // Will be implemented when work orders are ready
+        const upcomingAppointments = 0; // Will be implemented when appointments are ready
+        
+        // Calculate total maintenance cost from last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        let monthlyRevenue = 0;
+        let completedServices = 0;
+        
+        vehiclesList.forEach((vehicle: any) => {
+          if (vehicle.maintenanceHistory) {
+            vehicle.maintenanceHistory.forEach((maintenance: any) => {
+              const maintenanceDate = new Date(maintenance.date);
+              if (maintenanceDate >= thirtyDaysAgo) {
+                monthlyRevenue += maintenance.cost;
+                completedServices++;
+              }
+            });
+          }
+        });
 
-      setStats(mockStats);
-      setVehicles(mockVehicles);
+        const calculatedStats: DashboardStats = {
+          totalVehicles,
+          activeWorkOrders,
+          upcomingAppointments,
+          monthlyRevenue,
+          completedServices,
+          customerSatisfaction: 4.8 // Default value, can be calculated from feedback
+        };
+
+        setStats(calculatedStats);
+      }
+
+      // Mock data for work orders and appointments (will be replaced with real API calls)
+      const mockWorkOrders: WorkOrder[] = [];
+      const mockAppointments: Appointment[] = [];
+
       setWorkOrders(mockWorkOrders);
       setAppointments(mockAppointments);
     } catch (error) {
       console.error('Dashboard veri yükleme hatası:', error);
+      // Fallback to empty data on error
+      setStats({
+        totalVehicles: 0,
+        activeWorkOrders: 0,
+        upcomingAppointments: 0,
+        monthlyRevenue: 0,
+        completedServices: 0,
+        customerSatisfaction: 0
+      });
+      setVehicles([]);
+      setWorkOrders([]);
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -396,44 +387,53 @@ export default function Dashboard() {
 
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Recent Work Orders */}
+              {/* Recent Vehicles */}
               <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900">Son İş Emirleri</h3>
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                  <h3 className="text-lg font-medium text-gray-900">Son Eklenen Araçlar</h3>
+                  <button
+                    onClick={() => router.push('/dashboard/vehicles')}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    Tümünü Gör
+                  </button>
                 </div>
                 <div className="p-6">
-                  {workOrders.length > 0 ? (
+                  {vehicles.length > 0 ? (
                     <div className="space-y-4">
-                      {workOrders.map((order) => (
-                        <div key={order._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      {vehicles.slice(0, 3).map((vehicle) => (
+                        <div key={vehicle._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                           <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{order.title}</h4>
-                            <p className="text-sm text-gray-600">{order.vehicle.plate}</p>
+                            <h4 className="font-medium text-gray-900">{vehicle.brand} {vehicle.vehicleModel}</h4>
+                            <p className="text-sm text-gray-600">{vehicle.plate}</p>
                             <div className="flex items-center space-x-2 mt-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                                {order.status === 'pending' && 'Beklemede'}
-                                {order.status === 'in-progress' && 'İşlemde'}
-                                {order.status === 'completed' && 'Tamamlandı'}
-                                {order.status === 'cancelled' && 'İptal Edildi'}
-                                {order.status === 'on-hold' && 'Duraklatıldı'}
-                              </span>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(order.priority)}`}>
-                                {order.priority === 'urgent' && 'Acil'}
-                                {order.priority === 'high' && 'Yüksek'}
-                                {order.priority === 'medium' && 'Orta'}
-                                {order.priority === 'low' && 'Düşük'}
+                              <span className="text-xs text-gray-500">
+                                {vehicle.year} • {vehicle.mileage.toLocaleString('tr-TR')} km
                               </span>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium text-gray-900">{formatCurrency(order.estimatedCost)}</p>
-                            <p className="text-sm text-gray-600">{formatDate(order.scheduledDate)}</p>
+                            <button
+                              onClick={() => router.push(`/dashboard/vehicles/${vehicle._id}`)}
+                              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                            >
+                              Detay
+                            </button>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-8">Henüz iş emri bulunmuyor</p>
+                    <div className="text-center py-8">
+                      <Car className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-4">Henüz araç eklenmemiş</p>
+                      <button
+                        onClick={() => router.push('/dashboard/vehicles/add')}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        İlk Aracını Ekle
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

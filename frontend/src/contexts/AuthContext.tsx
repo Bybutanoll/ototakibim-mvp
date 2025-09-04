@@ -13,6 +13,7 @@ export interface User {
   company?: string;
   role: 'user' | 'admin' | 'manager';
   isActive: boolean;
+  onboardingCompleted?: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -27,7 +27,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Star
+  Star,
+  LogOut
 } from 'lucide-react';
 
 interface Vehicle {
@@ -94,6 +95,13 @@ export default function Dashboard() {
       router.push('/login');
     }
   }, [state.isLoading, state.isAuthenticated, router]);
+
+  // Redirect to onboarding if not completed
+  useEffect(() => {
+    if (user && !user.onboardingCompleted) {
+      router.push('/dashboard/onboarding');
+    }
+  }, [user, router]);
 
   useEffect(() => {
     if (user && state.isAuthenticated) {
@@ -279,6 +287,16 @@ export default function Dashboard() {
               >
                 <Calendar className="w-4 h-4" />
                 <span>Randevu Al</span>
+              </button>
+              <button
+                onClick={() => {
+                  logout();
+                  router.push('/');
+                }}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Çıkış Yap</span>
               </button>
             </div>
           </div>

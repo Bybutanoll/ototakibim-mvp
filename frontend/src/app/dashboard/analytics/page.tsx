@@ -18,6 +18,7 @@ import {
   LineChart,
   Activity,
   Target,
+  CheckCircle,
   Award,
   Clock,
   AlertCircle

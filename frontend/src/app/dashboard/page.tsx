@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Bell,
   BarChart3,
+  Package,
   Plus,
   Search,
   Filter,
@@ -290,6 +291,7 @@ export default function Dashboard() {
               { id: 'appointments', name: 'Randevular', icon: Calendar },
               { id: 'customers', name: 'Müşteriler', icon: Users },
               { id: 'finance', name: 'Finans', icon: DollarSign },
+              { id: 'inventory', name: 'Envanter', icon: Package },
               { id: 'analytics', name: 'Analitik', icon: BarChart3 },
               { id: 'notifications', name: 'Bildirimler', icon: Bell }
             ].map((tab) => (
@@ -606,6 +608,32 @@ export default function Dashboard() {
                   className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Yeni Finansal Kayıt
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'inventory' && (
+          <div className="bg-white rounded-lg shadow p-8">
+            <div className="text-center">
+              <Package className="w-16 h-16 text-orange-600 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Envanter Yönetimi</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Parça stok takibi, otomatik sipariş sistemi ve tedarikçi yönetimi ile envanterinizi optimize edin.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => router.push('/dashboard/inventory')}
+                  className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Envanteri Görüntüle
+                </button>
+                <button
+                  onClick={() => router.push('/dashboard/inventory')}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Parça Ekle
                 </button>
               </div>
             </div>

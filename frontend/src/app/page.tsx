@@ -112,6 +112,17 @@ export default function Home() {
             <motion.div
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
+              className="group"
+            >
+              <Link href="/login" className="relative bg-white/10 backdrop-blur-lg text-white px-12 py-6 rounded-2xl font-bold text-xl transition-all duration-300 hover:bg-white/20 hover:shadow-2xl hover:shadow-white/25 border border-white/20 flex items-center justify-center space-x-3">
+                <span className="relative z-10">Giriş Yap</span>
+                <ArrowRight className="h-7 w-7 relative z-10 group-hover:translate-x-2 transition-transform duration-300" />
+              </Link>
+            </motion.div>
+            
+            <motion.div
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
               <button 
                 onClick={() => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')}

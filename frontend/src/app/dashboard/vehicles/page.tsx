@@ -47,6 +47,8 @@ interface Vehicle {
   description?: string;
   photos: string[];
   documents: any[];
+  lastMaintenance?: Date;
+  nextMaintenance?: Date;
   maintenanceHistory: Array<{
     date: Date;
     type: 'service' | 'repair' | 'inspection';

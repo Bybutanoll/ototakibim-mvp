@@ -7,6 +7,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   // Netlify Configuration
+  output: 'export',
   trailingSlash: true,
   images: {
     unoptimized: true,

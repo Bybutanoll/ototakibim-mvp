@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 import dotenv from 'dotenv';
 import { connectDB } from './config/database';
 import authRoutes from './routes/auth';
@@ -13,6 +14,25 @@ import obdRoutes from './routes/obd';
 import blockchainRoutes from './routes/blockchain';
 import arvrRoutes from './routes/arvr';
 import paymentRoutes from './routes/payment';
+import aiRoutes from './routes/ai';
+import customerRoutes from './routes/customers';
+import maintenanceRoutes from './routes/maintenance';
+import inventoryRoutes from './routes/inventory';
+import biRoutes from './routes/bi';
+import {
+  securityHeaders,
+  corsOptions,
+  sanitizeInput,
+  sqlInjectionProtection,
+  xssProtection,
+  requestLogger,
+  errorHandler,
+  fileUploadSecurity,
+  requestSizeLimit,
+  apiRateLimit,
+  authRateLimit,
+  uploadRateLimit
+} from './middleware/security';
 
 dotenv.config();
 
@@ -21,26 +41,26 @@ const app = express();
 // Trust proxy for Render.com
 app.set('trust proxy', 1);
 
-// Middleware
-app.use(helmet());
-app.use(cors({
-  origin: true, // Tüm origin'lere izin ver
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+// Security Middleware
+app.use(securityHeaders);
+app.use(cors(corsOptions));
 app.use(compression());
 app.use(morgan('combined'));
+app.use(requestLogger);
+app.use(requestSizeLimit);
+app.use(sanitizeInput);
+app.use(sqlInjectionProtection);
+app.use(xssProtection);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting - temporarily disabled for debugging
-// const limiter = rateLimit({
-//   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-//   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
-//   message: 'Çok fazla istek gönderildi, lütfen daha sonra tekrar deneyin.'
-// });
-// app.use('/api/', limiter);
+// Static file serving for uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Rate limiting
+app.use('/api', apiRateLimit);
+app.use('/api/auth', authRateLimit);
+app.use('/api/upload', uploadRateLimit);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -89,6 +109,11 @@ app.use('/api/obd', obdRoutes);
 app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/arvr', arvrRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api', maintenanceRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/bi', biRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

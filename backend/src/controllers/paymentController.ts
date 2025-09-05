@@ -1,6 +1,26 @@
 import { Request, Response } from 'express';
+import StripeService, { SUBSCRIPTION_PLANS } from '../services/stripeService';
+import Subscription from '../models/Subscription';
+import User from '../models/User';
 
 export const paymentController = {
+  /**
+   * Get available subscription plans
+   */
+  async getPlans(req: Request, res: Response) {
+    try {
+      res.json({
+        success: true,
+        plans: SUBSCRIPTION_PLANS
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch plans'
+      });
+    }
+  },
+
   /**
    * Create a new payment method
    */
@@ -158,33 +178,102 @@ export const paymentController = {
   async createSubscription(req: Request, res: Response) {
     try {
       const { planId, paymentMethodId } = req.body;
+      const userId = (req as any).user.id;
       
-      // Mock subscription creation
-      const subscription = {
-        id: `sub_${Date.now()}`,
-        userId: req.user?.id || 'demo-user',
-        planId,
-        planName: planId === 'starter' ? 'Starter' : planId === 'professional' ? 'Professional' : 'Enterprise',
-        status: 'active',
-        amount: planId === 'starter' ? 99 : planId === 'professional' ? 199 : 399,
-        currency: 'TRY',
-        interval: 'monthly',
-        currentPeriodStart: new Date().toISOString(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        paymentMethod: {
-          id: paymentMethodId,
-          cardNumber: '**** **** **** 1234',
-          cardholderName: 'John Doe'
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      // Find the plan
+      const plan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
+      if (!plan) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid plan ID'
+        });
+      }
+
+      // Get user details
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      // Check if user already has an active subscription
+      const existingSubscription = await Subscription.findOne({
+        userId,
+        status: 'active'
+      });
+
+      if (existingSubscription) {
+        return res.status(400).json({
+          success: false,
+          error: 'User already has an active subscription'
+        });
+      }
+
+      // Create or get Stripe customer
+      let stripeCustomerId = user.stripeCustomerId;
+      if (!stripeCustomerId) {
+        const customer = await StripeService.createCustomer(
+          user.email,
+          `${user.firstName} ${user.lastName}`,
+          userId
+        );
+        stripeCustomerId = customer.id;
+        
+        // Update user with Stripe customer ID
+        await User.findByIdAndUpdate(userId, { stripeCustomerId });
+      }
+
+      // Attach payment method to customer
+      await StripeService.attachPaymentMethod(paymentMethodId, stripeCustomerId);
+
+      // Create Stripe subscription
+      const stripeSubscription = await StripeService.createSubscription({
+        customerId: stripeCustomerId,
+        priceId: plan.stripePriceId,
+        paymentMethodId
+      });
+
+      // Save subscription to database
+      const subscription = new Subscription({
+        userId,
+        stripeCustomerId,
+        stripeSubscriptionId: stripeSubscription.id,
+        planId: plan.id,
+        planName: plan.name,
+        status: stripeSubscription.status,
+        amount: plan.price,
+        currency: plan.currency,
+        interval: plan.interval,
+        currentPeriodStart: new Date((stripeSubscription as any).current_period_start * 1000),
+        currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000),
+        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
+        trialStart: stripeSubscription.trial_start ? new Date(stripeSubscription.trial_start * 1000) : undefined,
+        trialEnd: stripeSubscription.trial_end ? new Date(stripeSubscription.trial_end * 1000) : undefined
+      });
+
+      await subscription.save();
 
       res.status(201).json({
         success: true,
-        data: subscription
+        data: {
+          id: subscription._id,
+          stripeSubscriptionId: subscription.stripeSubscriptionId,
+          planId: subscription.planId,
+          planName: subscription.planName,
+          status: subscription.status,
+          amount: subscription.amount,
+          currency: subscription.currency,
+          interval: subscription.interval,
+          currentPeriodStart: subscription.currentPeriodStart,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          isActive: (subscription as any).isActive,
+          isInTrial: (subscription as any).isInTrial
+        }
       });
     } catch (error) {
+      console.error('Subscription creation error:', error);
       res.status(500).json({
         success: false,
         error: 'Subscription creation failed'
@@ -198,13 +287,40 @@ export const paymentController = {
   async cancelSubscription(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const userId = (req as any).user.id;
       
-      // Mock subscription cancellation
+      // Find the subscription
+      const subscription = await Subscription.findOne({
+        _id: id,
+        userId
+      });
+
+      if (!subscription) {
+        return res.status(404).json({
+          success: false,
+          error: 'Subscription not found'
+        });
+      }
+
+      // Cancel in Stripe
+      await StripeService.cancelSubscription(subscription.stripeSubscriptionId);
+
+      // Update in database
+      subscription.status = 'canceled';
+      subscription.canceledAt = new Date();
+      await subscription.save();
+
       res.json({
         success: true,
-        message: 'Subscription cancelled successfully'
+        message: 'Subscription cancelled successfully',
+        data: {
+          id: subscription._id,
+          status: subscription.status,
+          canceledAt: subscription.canceledAt
+        }
       });
     } catch (error) {
+      console.error('Subscription cancellation error:', error);
       res.status(500).json({
         success: false,
         error: 'Subscription cancellation failed'
@@ -258,36 +374,33 @@ export const paymentController = {
    */
   async getSubscriptions(req: Request, res: Response) {
     try {
-      const userId = req.user?.id || 'demo-user';
+      const userId = (req as any).user.id;
       
-      // Mock subscriptions data
-      const subscriptions = [
-        {
-          id: 'sub_1',
-          userId,
-          planId: 'professional',
-          planName: 'Professional',
-          status: 'active',
-          amount: 199,
-          currency: 'TRY',
-          interval: 'monthly',
-          currentPeriodStart: '2024-01-01T00:00:00.000Z',
-          currentPeriodEnd: '2024-02-01T00:00:00.000Z',
-          paymentMethod: {
-            id: 'pm_1',
-            cardNumber: '**** **** **** 1234',
-            cardholderName: 'John Doe'
-          },
-          createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z'
-        }
-      ];
+      const subscriptions = await Subscription.find({ userId });
 
       res.json({
         success: true,
-        data: subscriptions
+        data: subscriptions.map((sub: any) => ({
+          id: sub._id,
+          stripeSubscriptionId: sub.stripeSubscriptionId,
+          planId: sub.planId,
+          planName: sub.planName,
+          status: sub.status,
+          amount: sub.amount,
+          currency: sub.currency,
+          interval: sub.interval,
+          currentPeriodStart: sub.currentPeriodStart,
+          currentPeriodEnd: sub.currentPeriodEnd,
+          cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+          canceledAt: sub.canceledAt,
+          isActive: sub.isActive,
+          isInTrial: sub.isInTrial,
+          createdAt: sub.createdAt,
+          updatedAt: sub.updatedAt
+        }))
       });
     } catch (error) {
+      console.error('Get subscriptions error:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch subscriptions'

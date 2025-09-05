@@ -10,6 +10,8 @@ export interface IUser extends Document {
   role: 'admin' | 'manager' | 'technician';
   isActive: boolean;
   avatar?: string;
+  stripeCustomerId?: string;
+  onboardingCompleted?: boolean;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -60,6 +62,14 @@ const userSchema = new Schema<IUser>({
   avatar: {
     type: String,
     default: ''
+  },
+  stripeCustomerId: {
+    type: String,
+    default: null
+  },
+  onboardingCompleted: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true,

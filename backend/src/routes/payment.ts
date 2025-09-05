@@ -1,7 +1,14 @@
 import express from 'express';
 import { paymentController } from '../controllers/paymentController';
+import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
+
+// Plans endpoint (public)
+router.get('/plans', paymentController.getPlans);
+
+// All other payment routes require authentication
+router.use(authenticateToken);
 
 // Payment Methods
 router.post('/methods', paymentController.createPaymentMethod);

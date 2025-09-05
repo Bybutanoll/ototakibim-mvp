@@ -7,7 +7,8 @@ import {
   updateVehicle, 
   deleteVehicle, 
   searchVehicles,
-  addMaintenanceRecord 
+  addMaintenanceRecord,
+  upload
 } from '../controllers/vehicleController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -85,10 +86,10 @@ router.get('/search', searchVehicles);
 router.get('/:id', getVehicle);
 
 // POST /api/vehicles - Yeni araç oluştur
-router.post('/', vehicleValidation, createVehicle);
+router.post('/', upload.array('photos', 5), createVehicle);
 
 // PUT /api/vehicles/:id - Araç güncelle
-router.put('/:id', vehicleValidation, updateVehicle);
+router.put('/:id', upload.array('photos', 5), updateVehicle);
 
 // DELETE /api/vehicles/:id - Araç sil
 router.delete('/:id', deleteVehicle);

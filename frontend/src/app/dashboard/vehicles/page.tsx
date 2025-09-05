@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import VehicleForm from '@/components/VehicleForm';
 import {
   Car,
   Plus,
@@ -72,6 +73,7 @@ export default function VehiclesPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [brandFilter, setBrandFilter] = useState<string>('all');
@@ -79,10 +81,13 @@ export default function VehiclesPage() {
   const [yearFilter, setYearFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [expandedVehicle, setExpandedVehicle] = useState<string | null>(null);
+  const [showVehicleForm, setShowVehicleForm] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
 
   useEffect(() => {
     if (user) {
       loadVehicles();
+      loadCustomers();
     }
   }, [user]);
 
@@ -96,7 +101,8 @@ export default function VehiclesPage() {
         return;
       }
 
-      const response = await fetch('https://ototakibim-mvp.onrender.com/api/vehicles', {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_BASE_URL}/api/vehicles`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -114,6 +120,118 @@ export default function VehiclesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadCustomers = async () => {
+    try {
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) return;
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_BASE_URL}/api/customers`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCustomers(data.data || []);
+      }
+    } catch (error) {
+      console.error('Customers loading error:', error);
+    }
+  };
+
+  const handleSaveVehicle = async (vehicleData: any) => {
+    try {
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) return;
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      
+      // Create FormData for file uploads
+      const formData = new FormData();
+      formData.append('plate', vehicleData.plate);
+      formData.append('brand', vehicleData.brand);
+      formData.append('vehicleModel', vehicleData.vehicleModel);
+      formData.append('year', vehicleData.year.toString());
+      formData.append('color', vehicleData.color);
+      formData.append('vin', vehicleData.vin);
+      formData.append('engineSize', vehicleData.engineSize);
+      formData.append('fuelType', vehicleData.fuelType);
+      formData.append('transmission', vehicleData.transmission);
+      formData.append('mileage', vehicleData.mileage.toString());
+      formData.append('owner', vehicleData.owner);
+      formData.append('description', vehicleData.description);
+
+      // Append photos
+      vehicleData.photos.forEach((photo: File, index: number) => {
+        formData.append('photos', photo);
+      });
+
+      const url = editingVehicle 
+        ? `${API_BASE_URL}/api/vehicles/${editingVehicle._id}`
+        : `${API_BASE_URL}/api/vehicles`;
+
+      const response = await fetch(url, {
+        method: editingVehicle ? 'PUT' : 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        await loadVehicles();
+        setEditingVehicle(null);
+        setShowVehicleForm(false);
+      } else {
+        throw new Error('Vehicle save failed');
+      }
+    } catch (error) {
+      console.error('Vehicle save error:', error);
+      throw error;
+    }
+  };
+
+  const handleEditVehicle = (vehicle: Vehicle) => {
+    setEditingVehicle(vehicle);
+    setShowVehicleForm(true);
+  };
+
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    if (!confirm('Bu aracı silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) return;
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_BASE_URL}/api/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        await loadVehicles();
+      } else {
+        throw new Error('Vehicle delete failed');
+      }
+    } catch (error) {
+      console.error('Vehicle delete error:', error);
+    }
+  };
+
+  const handleAddVehicle = () => {
+    setEditingVehicle(null);
+    setShowVehicleForm(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -282,11 +400,11 @@ export default function VehiclesPage() {
                 <span>Filtreler</span>
               </button>
               <button
-                onClick={() => router.push('/dashboard/vehicles/add')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                onClick={handleAddVehicle}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl"
               >
-                <Plus className="w-4 h-4" />
-                <span>Yeni Araç</span>
+                <Plus className="w-5 h-5" />
+                <span>Yeni Araç Ekle</span>
               </button>
             </div>
           </div>
@@ -470,7 +588,10 @@ export default function VehiclesPage() {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
+                          <button 
+                            onClick={() => handleEditVehicle(vehicle)}
+                            className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button 
@@ -495,8 +616,8 @@ export default function VehiclesPage() {
                     : 'Henüz araç eklenmemiş.'}
                 </p>
                 <button
-                  onClick={() => router.push('/dashboard/vehicles/add')}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={handleAddVehicle}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
                 >
                   İlk Aracı Ekle
                 </button>
@@ -505,6 +626,18 @@ export default function VehiclesPage() {
           </div>
         </div>
       </div>
+
+      {/* Vehicle Form Modal */}
+      <VehicleForm
+        isOpen={showVehicleForm}
+        onClose={() => {
+          setShowVehicleForm(false);
+          setEditingVehicle(null);
+        }}
+        onSave={handleSaveVehicle}
+        editingVehicle={editingVehicle}
+        customers={customers}
+      />
     </div>
   );
 }

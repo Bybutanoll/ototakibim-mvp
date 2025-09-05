@@ -29,7 +29,8 @@ import {
   AlertCircle,
   Star,
   LogOut,
-  FileText
+  FileText,
+  Brain
 } from 'lucide-react';
 
 interface Vehicle {
@@ -75,7 +76,7 @@ interface DashboardStats {
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, state } = useAuth();
+  const { user, state, logout } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalVehicles: 0,
     activeWorkOrders: 0,
@@ -89,6 +90,7 @@ export default function Dashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [aiInsights, setAiInsights] = useState<any>(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -107,6 +109,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (user && state.isAuthenticated) {
       loadDashboardData();
+      loadAIInsights();
     }
   }, [user, state.isAuthenticated]);
 
@@ -119,13 +122,20 @@ export default function Dashboard() {
         throw new Error('No authentication token found');
       }
 
-      // Load vehicles data
-      const vehiclesResponse = await fetch('https://ototakibim-mvp.onrender.com/api/vehicles', {
+      // Load vehicles data with timeout
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const vehiclesResponse = await fetch(`${API_BASE_URL}/api/vehicles`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
 
       if (vehiclesResponse.ok) {
         const vehiclesData = await vehiclesResponse.json();
@@ -176,6 +186,20 @@ export default function Dashboard() {
       setAppointments(mockAppointments);
     } catch (error) {
       console.error('Dashboard veri yükleme hatası:', error);
+      
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          console.error('API request timeout');
+        } else if (error.message.includes('token')) {
+          console.error('Authentication error');
+          // Redirect to login if token is invalid
+          localStorage.removeItem('ototakibim_token');
+          router.push('/login');
+          return;
+        }
+      }
+      
       // Fallback to empty data on error
       setStats({
         totalVehicles: 0,
@@ -190,6 +214,28 @@ export default function Dashboard() {
       setAppointments([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAIInsights = async () => {
+    try {
+      const token = localStorage.getItem('ototakibim_token');
+      if (!token) return;
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_BASE_URL}/api/ai/dashboard-insights`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiInsights(data.data);
+      }
+    } catch (error) {
+      console.error('AI insights loading error:', error);
     }
   };
 
@@ -243,13 +289,44 @@ export default function Dashboard() {
 
   // Show loading while auth is being checked or data is loading
   if (state.isLoading || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            {state.isLoading ? 'Kimlik doğrulanıyor...' : 'Dashboard yükleniyor...'}
-          </p>
+      return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header Skeleton */}
+          <div className="mb-8">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+          </div>
+          
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white p-6 rounded-lg shadow-sm">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2 animate-pulse"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Content Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -262,13 +339,13 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      {/* Header - Premium Design */}
+      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Hoş geldin, {user?.firstName}!
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Hoş geldin, {user?.firstName}! 👋
               </h1>
               <p className="text-gray-600 mt-1">
                 OtoTakibim Dashboard - Araçlarını ve hizmetlerini yönet
@@ -277,14 +354,14 @@ export default function Dashboard() {
             <div className="flex space-x-3">
               <button
                 onClick={() => router.push('/dashboard/work-orders/add')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 <Plus className="w-4 h-4" />
                 <span>Yeni İş Emri</span>
               </button>
               <button
                 onClick={() => router.push('/dashboard/appointments/add')}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 <Calendar className="w-4 h-4" />
                 <span>Randevu Al</span>
@@ -292,9 +369,8 @@ export default function Dashboard() {
               <button
                 onClick={() => {
                   logout();
-                  router.push('/');
                 }}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+                className="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Çıkış Yap</span>
@@ -304,8 +380,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b">
+      {/* Navigation Tabs - Premium Design */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {[
@@ -327,10 +403,10 @@ export default function Dashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                className={`py-4 px-3 border-b-2 font-medium text-sm flex items-center space-x-2 transition-all duration-300 rounded-t-lg ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50/50'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -345,40 +421,72 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'overview' && (
           <div className="space-y-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Car className="w-6 h-6 text-blue-600" />
+            {/* Stats Cards - Premium Design */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+                      <Car className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Toplam Araç</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats.totalVehicles}</p>
+                    </div>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Toplam Araç</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalVehicles}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Wrench className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Aktif İş Emirleri</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.activeWorkOrders}</p>
+                  <div className="text-right">
+                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Calendar className="w-6 h-6 text-green-600" />
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg">
+                      <Wrench className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Aktif İş Emirleri</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats.activeWorkOrders}</p>
+                    </div>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Yaklaşan Randevular</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.upcomingAppointments}</p>
+                  <div className="text-right">
+                    <div className="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg">
+                      <Calendar className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Yaklaşan Randevular</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats.upcomingAppointments}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg">
+                      <DollarSign className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Aylık Gelir</p>
+                      <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.monthlyRevenue)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
                   </div>
                 </div>
               </div>
@@ -419,6 +527,76 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            {/* AI Insights Section */}
+            {aiInsights && (
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+                <div className="flex items-center mb-4">
+                  <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                    <Brain className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 ml-3">🤖 AI Öngörüleri</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Insights Summary */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-3">📊 Özet</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Toplam Araç:</span>
+                        <span className="font-medium">{aiInsights.totalVehicles}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Dikkat Gereken:</span>
+                        <span className="font-medium text-orange-600">{aiInsights.vehiclesNeedingAttention}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recommendations */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-3">💡 Öneriler</h4>
+                    <div className="space-y-2">
+                      {aiInsights.recommendations.map((rec: string, index: number) => (
+                        <div key={index} className="flex items-start">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                          <span className="text-sm text-gray-700">{rec}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vehicle Insights */}
+                {aiInsights.insights && aiInsights.insights.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold text-gray-900 mb-3">🚗 Araç Detayları</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {aiInsights.insights.map((insight: any, index: number) => (
+                        <div key={index} className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-orange-200">
+                          <h5 className="font-medium text-gray-900 mb-2">{insight.vehicleName}</h5>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Acil Bakım:</span>
+                              <span className="font-medium text-orange-600">{insight.urgentPredictions}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Sonraki Servis:</span>
+                              <span className="font-medium">{new Date(insight.nextService).toLocaleDateString('tr-TR')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Tahmini Maliyet:</span>
+                              <span className="font-medium text-green-600">{formatCurrency(insight.estimatedCost)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

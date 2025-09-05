@@ -1,6 +1,41 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import Vehicle, { IVehicle } from '../models/Vehicle';
+
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, '../../uploads/vehicles');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Sadece resim dosyaları yüklenebilir'));
+  }
+};
+
+export const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 5 // Maximum 5 files
+  },
+  fileFilter: fileFilter
+});
 
 // Tüm araçları getir (kullanıcının kendi araçları)
 export const getVehicles = async (req: Request, res: Response) => {
@@ -60,30 +95,35 @@ export const getVehicle = async (req: Request, res: Response) => {
 // Yeni araç oluştur
 export const createVehicle = async (req: Request, res: Response) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation hatası',
-        errors: errors.array()
-      });
+    const userId = (req as any).user.id;
+    
+    // Handle file uploads
+    const photos: string[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      photos.push(...req.files.map((file: Express.Multer.File) => 
+        `/uploads/vehicles/${file.filename}`
+      ));
     }
 
-    const userId = (req as any).user.id;
-    const vehicleData = { ...req.body, owner: userId };
+    const vehicleData = {
+      ...req.body,
+      owner: userId,
+      photos: photos,
+      mileage: parseInt(req.body.mileage) || 0,
+      year: parseInt(req.body.year) || new Date().getFullYear()
+    };
 
-    // Plaka ve VIN benzersizlik kontrolü
+    // Plaka benzersizlik kontrolü
     const existingVehicle = await Vehicle.findOne({
-      $or: [
-        { plate: vehicleData.plate, owner: userId },
-        { vin: vehicleData.vin, owner: userId }
-      ]
+      plate: vehicleData.plate.toUpperCase(),
+      owner: userId,
+      isActive: true
     });
 
     if (existingVehicle) {
       return res.status(400).json({
         status: 'error',
-        message: 'Bu plaka veya VIN numarası zaten kayıtlı'
+        message: 'Bu plaka zaten kayıtlı'
       });
     }
 

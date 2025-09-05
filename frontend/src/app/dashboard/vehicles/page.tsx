@@ -256,38 +256,6 @@ export default function VehiclesPage() {
     return new Intl.NumberFormat('tr-TR').format(mileage);
   };
 
-  const handleDeleteVehicle = async (vehicleId: string) => {
-    if (!confirm('Bu aracı silmek istediğinizden emin misiniz?')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('ototakibim_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`https://ototakibim-mvp.onrender.com/api/vehicles/${vehicleId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete vehicle');
-      }
-
-      // Remove vehicle from local state
-      setVehicles(vehicles.filter(v => v._id !== vehicleId));
-      alert('Araç başarıyla silindi');
-    } catch (error) {
-      console.error('Delete vehicle error:', error);
-      alert('Araç silinirken hata oluştu: ' + (error as Error).message);
-    }
-  };
 
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesSearch = vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||

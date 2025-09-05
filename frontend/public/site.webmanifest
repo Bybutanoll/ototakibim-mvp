@@ -1,0 +1,27 @@
+{
+  "name": "OtoTakibim - AI Destekli Araç Yönetim Sistemi",
+  "short_name": "OtoTakibim",
+  "description": "Türkiye'nin en gelişmiş AI destekli araç yönetim ve bakım takip sistemi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "tr",
+  "dir": "ltr"
+}

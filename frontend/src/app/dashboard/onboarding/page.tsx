@@ -175,7 +175,7 @@ export default function OnboardingPage() {
                 >
                   <Users className="w-8 h-8 mx-auto mb-2" />
                   <div className="font-medium">Bireysel</div>
-                  <div className="text-sm text-gray-500">Teknisyen</div>
+                  <div className="text-sm text-gray-700">Teknisyen</div>
                 </button>
                 <button
                   type="button"
@@ -188,7 +188,7 @@ export default function OnboardingPage() {
                 >
                   <Building2 className="w-8 h-8 mx-auto mb-2" />
                   <div className="font-medium">Şirket</div>
-                  <div className="text-sm text-gray-500">Oto Servis</div>
+                  <div className="text-sm text-gray-700">Oto Servis</div>
                 </button>
               </div>
             </div>
@@ -279,7 +279,7 @@ export default function OnboardingPage() {
                   {formData.dailyCapacity} araç
                 </span>
               </div>
-              <div className="text-sm text-gray-500 mt-2">
+              <div className="text-sm text-gray-700 mt-2">
                 Günlük ortalama kaç aracı servis edebilirsiniz?
               </div>
             </div>
@@ -404,7 +404,7 @@ export default function OnboardingPage() {
                 İşletmenizi tanıyalım ve size en uygun deneyimi sunalım
               </p>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-700">
               Adım {currentStep} / {steps.length}
             </div>
           </div>
@@ -422,7 +422,7 @@ export default function OnboardingPage() {
                   <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
                     currentStep >= step.id
                       ? 'border-blue-500 bg-blue-500 text-white'
-                      : 'border-gray-300 text-gray-400'
+                      : 'border-gray-300 text-gray-600'
                   }`}>
                     <Icon className="w-5 h-5" />
                   </div>
@@ -458,7 +458,7 @@ export default function OnboardingPage() {
               disabled={currentStep === 1}
               className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-colors ${
                 currentStep === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  ? 'bg-gray-100 text-gray-600 cursor-not-allowed'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >

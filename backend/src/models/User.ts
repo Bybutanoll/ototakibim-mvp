@@ -12,6 +12,9 @@ export interface IUser extends Document {
   avatar?: string;
   stripeCustomerId?: string;
   onboardingCompleted?: boolean;
+  businessName?: string;
+  businessType?: string;
+  address?: string;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -70,6 +73,18 @@ const userSchema = new Schema<IUser>({
   onboardingCompleted: {
     type: Boolean,
     default: false
+  },
+  businessName: {
+    type: String,
+    trim: true
+  },
+  businessType: {
+    type: String,
+    trim: true
+  },
+  address: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true,

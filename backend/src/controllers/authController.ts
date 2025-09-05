@@ -283,3 +283,85 @@ export const changePassword = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const completeOnboarding = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+      const { businessName, businessType, address, phone } = req.body;
+
+      const user = await User.findByIdAndUpdate(
+        userId,
+        {
+          businessName,
+          businessType,
+          address,
+          phone,
+          onboardingCompleted: true
+        },
+        { new: true }
+      );
+
+      if (!user) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Kullanıcı bulunamadı'
+        });
+      }
+
+      res.json({
+        status: 'success',
+        data: {
+          user: {
+            id: user._id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            businessName: user.businessName,
+            businessType: user.businessType,
+            address: user.address,
+            phone: user.phone,
+            onboardingCompleted: user.onboardingCompleted
+          }
+        },
+        message: 'Onboarding başarıyla tamamlandı'
+      });
+    } catch (error) {
+      console.error('Onboarding completion error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Onboarding tamamlanırken hata oluştu'
+      });
+    }
+};
+
+export const getOnboardingStatus = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+
+      const user = await User.findById(userId).select('onboardingCompleted businessName businessType address phone');
+
+      if (!user) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Kullanıcı bulunamadı'
+        });
+      }
+
+      res.json({
+        status: 'success',
+        data: {
+          onboardingCompleted: user.onboardingCompleted,
+          businessName: user.businessName,
+          businessType: user.businessType,
+          address: user.address,
+          phone: user.phone
+        }
+      });
+    } catch (error) {
+      console.error('Get onboarding status error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Onboarding durumu yüklenirken hata oluştu'
+      });
+    }
+};

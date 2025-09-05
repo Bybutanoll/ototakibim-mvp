@@ -1,6 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getCurrentUser, updateProfile, changePassword } from '../controllers/authController';
+import { register, login, getCurrentUser, updateProfile, changePassword, completeOnboarding, getOnboardingStatus } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
@@ -37,6 +37,8 @@ router.post('/login', loginValidation, login);
 router.get('/me', authenticateToken, getCurrentUser);
 router.put('/profile', authenticateToken, updateProfileValidation, updateProfile);
 router.put('/change-password', authenticateToken, changePasswordValidation, changePassword);
+router.get('/onboarding', authenticateToken, getOnboardingStatus);
+router.post('/onboarding', authenticateToken, completeOnboarding);
 
 // CORS preflight için OPTIONS method'ları
 router.options('/register', (req, res) => {

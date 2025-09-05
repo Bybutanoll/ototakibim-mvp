@@ -19,6 +19,8 @@ import customerRoutes from './routes/customers';
 import maintenanceRoutes from './routes/maintenance';
 import inventoryRoutes from './routes/inventory';
 import biRoutes from './routes/bi';
+import serviceRoutes from './routes/services';
+import appointmentRoutes from './routes/appointments';
 import {
   securityHeaders,
   corsOptions,
@@ -114,6 +116,8 @@ app.use('/api/customers', customerRoutes);
 app.use('/api', maintenanceRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/bi', biRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

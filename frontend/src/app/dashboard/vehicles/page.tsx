@@ -536,11 +536,11 @@ export default function VehiclesPage() {
                             <div className="space-y-2 text-sm">
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Son Bakım:</span>
-                                <span className="font-medium">{formatDate(vehicle.lastMaintenance)}</span>
+                                <span className="font-medium">{vehicle.lastMaintenance ? formatDate(vehicle.lastMaintenance) : 'Belirtilmemiş'}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Sonraki Bakım:</span>
-                                <span className="font-medium">{formatDate(vehicle.nextMaintenance)}</span>
+                                <span className="font-medium">{vehicle.nextMaintenance ? formatDate(vehicle.nextMaintenance) : 'Belirtilmemiş'}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Açıklama:</span>

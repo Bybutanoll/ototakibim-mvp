@@ -6,11 +6,8 @@
   NODE_VERSION = "18"
   NEXT_PUBLIC_API_URL = "https://ototakibim-mvp.onrender.com"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
 [functions]
-  directory = "netlify/functions"
+  included_files = []
 
 [dev]
   command = "npm run dev"

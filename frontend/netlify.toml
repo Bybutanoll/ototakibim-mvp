@@ -1,15 +1,13 @@
 [build]
   command = "cd frontend && npm install && npm run build"
-  publish = "frontend/out"
+  publish = "frontend/.next"
 
 [build.environment]
   NODE_VERSION = "18"
   NEXT_PUBLIC_API_URL = "https://ototakibim-mvp.onrender.com"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [dev]
   command = "npm run dev"

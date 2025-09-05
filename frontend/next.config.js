@@ -7,7 +7,6 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   // Netlify Configuration
-  output: 'standalone',
   trailingSlash: true,
   images: {
     unoptimized: true,

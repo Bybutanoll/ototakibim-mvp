@@ -6,6 +6,12 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Netlify Configuration
+  output: 'standalone',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
   // PWA Configuration
   async headers() {
     return [

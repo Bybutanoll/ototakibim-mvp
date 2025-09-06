@@ -1,4 +1,4 @@
-import jwt, { SignOptions, VerifyOptions, StringValue } from 'jsonwebtoken';
+import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -27,7 +27,7 @@ export interface TokenPair {
  */
 export const generateAccessToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>): string => {
   const options: SignOptions = {
-    expiresIn: JWT_EXPIRE as StringValue,
+    expiresIn: JWT_EXPIRE as any,
     issuer: 'ototakibim-api',
     audience: 'ototakibim-client'
   };
@@ -40,7 +40,7 @@ export const generateAccessToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>):
  */
 export const generateRefreshToken = (userId: string): string => {
   const options: SignOptions = {
-    expiresIn: JWT_REFRESH_EXPIRE as StringValue,
+    expiresIn: JWT_REFRESH_EXPIRE as any,
     issuer: 'ototakibim-api',
     audience: 'ototakibim-client'
   };

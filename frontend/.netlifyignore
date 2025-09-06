@@ -1,0 +1,49 @@
+# Netlify ignore dosyası
+# Bu dosyalar deploy edilmeyecek
+
+# Config dosyaları (serverless function olarak algılanmasın)
+eslint.config.mjs
+next-env.d.ts
+next.config.js
+next.config.ts
+postcss.config.mjs
+postcss.config.js
+tailwind.config.ts
+tailwind.config.js
+
+# Tüm config dosyaları
+*.config.*
+
+# Development dosyaları
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache ve build dosyaları
+.next/cache
+node_modules/.cache
+
+# Test dosyaları
+__tests__
+*.test.js
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.ts
+*.spec.tsx
+
+# Documentation
+README.md
+docs/
+
+# IDE dosyaları
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS dosyaları
+.DS_Store
+Thumbs.db

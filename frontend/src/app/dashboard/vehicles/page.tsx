@@ -537,6 +537,7 @@ export default function VehiclesPage() {
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Son Bakım:</span>
                                 <span className="font-medium">{vehicle.lastMaintenance ? formatDate(vehicle.lastMaintenance) : 'Belirtilmemiş'}</span>
+                                
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Sonraki Bakım:</span>

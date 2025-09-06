@@ -1,0 +1,109 @@
+[33mfec6bbe[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m fix: Add undefined check for formatDate - prevent TypeScript errors
+ frontend/src/app/dashboard/vehicles/page.tsx | 4 [32m++[m[31m--[m
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+[33m0ca08e3[m fix: Add missing Vehicle properties - lastMaintenance, nextMaintenance
+ frontend/src/app/dashboard/vehicles/page.tsx | 2 [32m++[m
+ 1 file changed, 2 insertions(+)
+[33m11104c6[m fix: Revert to normal Next.js build - remove static export, use Next.js plugin
+ frontend/netlify.toml   | 8 [32m+++[m[31m-----[m
+ frontend/next.config.js | 3 [31m---[m
+ 2 files changed, 3 insertions(+), 8 deletions(-)
+[33mb6be5a0[m fix: Remove dynamic routes [id] from git - static export compatibility
+ frontend/src/app/dashboard/vehicles/[id]/page.tsx | 572 [31m----------------------[m
+ frontend/src/app/work-orders/[id]/page.tsx        | 569 [31m---------------------[m
+ 2 files changed, 1141 deletions(-)
+[33mcf0320d[m fix: Remove API routes and headers/rewrites for static export compatibility
+ frontend/next.config.js                            | 37 [32m+[m[31m------------------[m
+ .../app/api/apple-app-site-association/route.ts    | 41 [31m----------------------[m
+ 2 files changed, 1 insertion(+), 77 deletions(-)
+[33me242b0b[m fix: Switch to static export - output export, out directory, remove dynamic
+ frontend/netlify.toml                       | 2 [32m+[m[31m-[m
+ frontend/next.config.js                     | 2 [32m++[m
+ frontend/src/app/dashboard/reports/page.tsx | 2 [31m--[m
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+[33mb7754eb[m fix: Simplify Netlify config - remove trailingSlash and Next.js plugin
+ frontend/netlify.toml   | 5 [32m+[m[31m----[m
+ frontend/next.config.js | 1 [31m-[m
+ 2 files changed, 1 insertion(+), 5 deletions(-)
+[33m4285e1b[m fix: Add redirect rules to netlify.toml for Next.js routing
+ frontend/netlify.toml | 5 [32m+++++[m
+ 1 file changed, 5 insertions(+)
+[33maa393b1[m fix: Remove incorrect redirects from netlify.toml - Next.js plugin handles routing
+ frontend/netlify.toml | 5 [31m-----[m
+ 1 file changed, 5 deletions(-)
+[33maf3bd5f[m fix: Fix reports page - remove FilePdf import and add dynamic export
+ frontend/src/app/dashboard/reports/page.tsx | 484 [32m+++++++++++++++++++++++++++[m[31m-[m
+ 1 file changed, 483 insertions(+), 1 deletion(-)
+[33m5a0ff3e[m fix: Remove unused FilePdf import from reports page
+ frontend/src/app/dashboard/reports/page.tsx | 485 [32m+[m[31m---------------------------[m
+ 1 file changed, 2 insertions(+), 483 deletions(-)
+[33m07cbb9f[m fix: Remove static export - use normal Next.js build for dynamic routes
+ frontend/netlify.toml   | 4 [32m++[m[31m--[m
+ frontend/next.config.js | 1 [31m-[m
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+[33m456d599[m fix: Netlify static export - use output export and out directory
+ frontend/netlify.toml   | 4 [32m++[m[31m--[m
+ frontend/next.config.js | 1 [32m+[m
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+[33mb9c87f3[m fix: Netlify deployment - remove standalone output, fix build config
+ frontend/netlify.toml   | 6 [32m+++[m[31m---[m
+ frontend/next.config.js | 3 [32m+[m[31m--[m
+ 2 files changed, 4 insertions(+), 5 deletions(-)
+[33mb87cbda[m fix: Netlify build command - add npm install before build
+ frontend/netlify.toml | 2 [32m+[m[31m-[m
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+[33m305e9da[m feat: Netlify deployment configuration - netlify.toml, next.config.js updates
+ frontend/netlify.toml   | 11 [32m+++++++++++[m
+ frontend/next.config.js |  6 [32m++++++[m
+ 2 files changed, 17 insertions(+)
+[33m6ef0825[m fix: Critical system fixes - API endpoints, text colors, forgot password, web manifest
+ backend/src/app.ts                               |   4 [32m+[m
+ backend/src/controllers/appointmentController.ts | 148 [32m++++++++++++++++++[m
+ backend/src/controllers/authController.ts        |  82 [32m++++++++++[m
+ backend/src/controllers/serviceController.ts     | 187 [32m+++++++++++++++++++++++[m
+ backend/src/models/User.ts                       |  15 [32m++[m
+ backend/src/routes/appointments.ts               |  36 [32m+++++[m
+ backend/src/routes/auth.ts                       |   4 [32m+[m[31m-[m
+ backend/src/routes/services.ts                   |  10 [32m++[m
+ frontend/public/site.webmanifest                 |  27 [32m++++[m
+ frontend/src/app/dashboard/onboarding/page.tsx   |  12 [32m+[m[31m-[m
+ frontend/src/app/forgot-password/page.tsx        | 152 [32m++++++++++++++++++[m
+ 11 files changed, 670 insertions(+), 7 deletions(-)
+[33mbedc06f[m fix: Frontend build fixes - duplicate functions, SVG syntax
+ frontend/src/app/dashboard/vehicles/page.tsx | 32 [31m----------------------------[m
+ frontend/src/app/page.tsx                    |  4 [32m+++[m[31m-[m
+ 2 files changed, 3 insertions(+), 33 deletions(-)
+[33m857c812[m feat: Complete system deployment - Security hardening, BI analytics, Inventory management, Premium UI/UX
+ backend/package-lock.json                        |   16 [32m+[m[31m-[m
+ backend/package.json                             |    4 [32m+[m[31m-[m
+ backend/src/app.ts                               |   55 [32m+[m[31m-[m
+ backend/src/controllers/aiController.ts          |  367 [32m+++++++[m
+ backend/src/controllers/biController.ts          |  892 [32m++++++++++++++++[m
+ backend/src/controllers/customerController.ts    |  228 [32m+++++[m
+ backend/src/controllers/inventoryController.ts   |  480 [32m+++++++++[m
+ backend/src/controllers/maintenanceController.ts |  282 [32m+++++[m
+ backend/src/controllers/paymentController.ts     |  207 [32m+++[m[31m-[m
+ backend/src/controllers/vehicleController.ts     |   70 [32m+[m[31m-[m
+ backend/src/middleware/security.ts               |  432 [32m++++++++[m
+ backend/src/models/Customer.ts                   |  477 [32m++[m[31m-------[m
+ backend/src/models/Inventory.ts                  |  340 [32m+++++++[m
+ backend/src/models/Subscription.ts               |  151 [32m+++[m
+ backend/src/models/User.ts                       |   10 [32m+[m
+ backend/src/routes/ai.ts                         |   38 [32m+[m
+ backend/src/routes/bi.ts                         |   17 [32m+[m
+ backend/src/routes/customers.ts                  |   73 [32m++[m
+ backend/src/routes/inventory.ts                  |   83 [32m++[m
+ backend/src/routes/maintenance.ts                |   51 [32m+[m
+ backend/src/routes/payment.ts                    |    7 [32m+[m
+ backend/src/routes/vehicles.ts                   |    7 [32m+[m[31m-[m
+ backend/src/services/aiService.ts                |  377 [32m+++++++[m
+ backend/src/services/stripeService.ts            |  238 [32m+++++[m
+ frontend/src/app/dashboard/analytics/page.tsx    |  688 [32m++++[m[31m---------[m
+ frontend/src/app/dashboard/inventory/page.tsx    |  825 [32m+++++++[m[31m--------[m
+ frontend/src/app/dashboard/page.tsx              |  272 [32m++++[m[31m-[m
+ frontend/src/app/dashboard/vehicles/page.tsx     |  149 [32m++[m[31m-[m
+ frontend/src/app/page.tsx                        | 1185 [32m++++++++[m[31m--------------[m
+ frontend/src/components/MaintenanceForm.tsx      |  372 [32m+++++++[m
+ frontend/src/components/MaintenanceHistory.tsx   |  343 [32m+++++++[m
+ frontend/src/components/VehicleForm.tsx          |  570 [32m+++++++++++[m
+ 32 files changed, 7109 insertions(+), 2197 deletions(-)

@@ -1,0 +1,3 @@
+# Netlify redirects for Next.js
+# Tüm route'ları index.html'e yönlendir (SPA routing için)
+/*    /index.html   200

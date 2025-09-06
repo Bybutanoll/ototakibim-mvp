@@ -74,6 +74,7 @@ export const corsOptions = {
       'http://localhost:3000',
       'http://localhost:3001',
       'https://ototakibim-mvp.netlify.app',
+      'https://ototakipv2.netlify.app',
       'https://ototakibim.com',
       'https://www.ototakibim.com'
     ];

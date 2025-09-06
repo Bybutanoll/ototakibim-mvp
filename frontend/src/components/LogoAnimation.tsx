@@ -13,12 +13,18 @@ interface LogoAnimationProps {
   size?: 'small' | 'medium' | 'large';
   showParticles?: boolean;
   className?: string;
+  interactive?: boolean;
+  ariaLabel?: string;
+  onClick?: () => void;
 }
 
 export default function LogoAnimation({ 
   size = 'medium', 
   showParticles = true, 
-  className = '' 
+  className = '',
+  interactive = false,
+  ariaLabel = 'OtoTakibim Ana Sayfa',
+  onClick
 }: LogoAnimationProps) {
   const logoRef = useRef<HTMLDivElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
@@ -83,40 +89,58 @@ export default function LogoAnimation({
       );
     }
 
-    // Scroll-triggered animations
+    // Advanced Intersection Observer with multiple thresholds
     ScrollTrigger.create({
       trigger: logo,
       start: "top 80%",
       end: "bottom 20%",
+      rootMargin: '50px', // Preload animations
       onEnter: () => setIsVisible(true),
       onLeave: () => setIsVisible(false),
       onEnterBack: () => setIsVisible(true),
       onLeaveBack: () => setIsVisible(false)
     });
 
-    // Hover animation
+    // Interactive animations
     const handleMouseEnter = () => {
-      gsap.to(logo, {
-        scale: 1.1,
-        duration: 0.3,
-        ease: "power2.out"
-      });
+      if (interactive) {
+        gsap.to(logo, {
+          scale: 1.1,
+          duration: 0.3,
+          ease: "power2.out"
+        });
+      }
     };
 
     const handleMouseLeave = () => {
-      gsap.to(logo, {
-        scale: 1,
-        duration: 0.3,
-        ease: "power2.out"
-      });
+      if (interactive) {
+        gsap.to(logo, {
+          scale: 1,
+          duration: 0.3,
+          ease: "power2.out"
+        });
+      }
     };
 
-    logo.addEventListener('mouseenter', handleMouseEnter);
-    logo.addEventListener('mouseleave', handleMouseLeave);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (interactive && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        onClick?.();
+      }
+    };
+
+    if (interactive) {
+      logo.addEventListener('mouseenter', handleMouseEnter);
+      logo.addEventListener('mouseleave', handleMouseLeave);
+      logo.addEventListener('keydown', handleKeyDown);
+    }
 
     return () => {
-      logo.removeEventListener('mouseenter', handleMouseEnter);
-      logo.removeEventListener('mouseleave', handleMouseLeave);
+      if (interactive) {
+        logo.removeEventListener('mouseenter', handleMouseEnter);
+        logo.removeEventListener('mouseleave', handleMouseLeave);
+        logo.removeEventListener('keydown', handleKeyDown);
+      }
     };
   }, [showParticles]);
 
@@ -125,8 +149,12 @@ export default function LogoAnimation({
       {/* Logo Container */}
       <div 
         ref={logoRef}
-        className="relative z-10 cursor-pointer"
+        className={`relative z-10 ${interactive ? 'cursor-pointer logo-interactive' : ''}`}
         style={{ width: currentSize.width, height: currentSize.height }}
+        tabIndex={interactive ? 0 : undefined}
+        role={interactive ? 'button' : 'img'}
+        aria-label={ariaLabel}
+        onClick={interactive ? onClick : undefined}
       >
         {/* Logo SVG - OtoTakibim Logo */}
         <svg

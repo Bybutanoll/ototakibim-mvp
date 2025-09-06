@@ -35,18 +35,36 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import LogoAnimation from '@/components/LogoAnimation';
-import ParticleSystem from '@/components/ParticleSystem';
+import AdvancedParticleSystem, { ProgressiveParticleSystem } from '@/components/AdvancedParticleSystem';
+import LogoLoadingSequence from '@/components/LogoLoadingSequence';
 import BrandButton, { CTAButton } from '@/components/BrandButton';
 import BrandCard, { FeatureCard, StatsCard } from '@/components/BrandCard';
+import { logoAnalytics } from '@/utils/analytics';
 import '@/styles/brand-system.css';
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 300], [0, -50]);
 
   useEffect(() => {
     setIsVisible(true);
+    
+    // Initialize analytics
+    logoAnalytics.trackDeviceCapabilities();
+    logoAnalytics.initPerformanceObserver();
+    
+    // Track page load
+    logoAnalytics.trackUserEngagement('page_load');
+    
+    // Simulate loading sequence
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      logoAnalytics.trackLogoAnimationComplete('hero_section');
+    }, 2500);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const features = [
@@ -169,10 +187,28 @@ export default function Home() {
     }
   ];
 
+  // Show loading sequence on first visit
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 flex items-center justify-center">
+        <LogoLoadingSequence 
+          onComplete={() => setIsLoading(false)}
+          className="text-center"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
-      {/* Particle System */}
-      <ParticleSystem particleCount={30} className="opacity-30" />
+      {/* Advanced Particle System */}
+      <ProgressiveParticleSystem 
+        particleCount={50}
+        enablePhysics={true}
+        enableMagnetism={true}
+        enableWind={true}
+        className="opacity-30"
+      />
       
       {/* Hero Section - Logo Animation */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -184,9 +220,18 @@ export default function Home() {
           }}></div>
         </div>
         
-        {/* Logo Animation */}
+        {/* Interactive Logo Animation */}
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
-          <LogoAnimation size="large" showParticles={true} />
+          <LogoAnimation 
+            size="large" 
+            showParticles={true}
+            interactive={true}
+            ariaLabel="OtoTakibim Ana Sayfa - Ana sayfaya dön"
+            onClick={() => {
+              logoAnalytics.trackLogoClick('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
         </div>
         
         {/* Floating Particles */}

@@ -155,10 +155,7 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Virtual for account lock status
-userSchema.virtual('isLocked').get(function() {
-  return !!(this.lockUntil && this.lockUntil > new Date());
-});
+// Virtual for account lock status - removed to avoid conflict with isLocked method
 
 // Method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {

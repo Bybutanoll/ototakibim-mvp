@@ -663,54 +663,6 @@ export const updateProfile = async (req: Request, res: Response) => {
   }
 };
 
-// Change password
-export const changePassword = async (req: Request, res: Response) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation hatası',
-        errors: errors.array()
-      });
-    }
-
-    const { currentPassword, newPassword } = req.body;
-    const userId = req.user?.id;
-
-    const user = await User.findById(userId).select('+password');
-    if (!user) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Kullanıcı bulunamadı'
-      });
-    }
-
-    // Check current password
-    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-    if (!isCurrentPasswordValid) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Mevcut şifre yanlış'
-      });
-    }
-
-    // Update password
-    user.password = newPassword;
-    await user.save();
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Şifre başarıyla değiştirildi'
-    });
-  } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Sunucu hatası'
-    });
-  }
-};
 
 export const completeOnboarding = async (req: Request, res: Response) => {
     try {

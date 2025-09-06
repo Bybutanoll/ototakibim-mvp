@@ -42,9 +42,9 @@ const updateStatusValidation = [
 // Routes
 router.post('/', authenticateToken, createWorkOrderValidation, createWorkOrder);
 router.get('/', authenticateToken, getWorkOrders);
-router.get('/:id', authenticateToken, getWorkOrderById);
+router.get('/:id', authenticateToken, getWorkOrder);
 router.put('/:id', authenticateToken, updateWorkOrderValidation, updateWorkOrder);
 router.delete('/:id', authenticateToken, deleteWorkOrder);
-router.patch('/:id/status', authenticateToken, updateStatusValidation, updateWorkOrderStatus);
+router.patch('/:id/status', authenticateToken, updateStatusValidation, updateWorkOrder);
 
 export default router;

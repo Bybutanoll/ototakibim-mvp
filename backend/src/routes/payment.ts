@@ -5,29 +5,29 @@ import { authenticateToken } from '../middleware/auth';
 const router = express.Router();
 
 // Plans endpoint (public)
-router.get('/plans', paymentController.getPlans);
+router.get('/plans', getPaymentStats);
 
 // All other payment routes require authentication
 router.use(authenticateToken);
 
 // Payment Methods
-router.post('/methods', paymentController.createPaymentMethod);
-router.get('/methods', paymentController.getPaymentMethods);
-router.put('/methods/:id', paymentController.updatePaymentMethod);
-router.delete('/methods/:id', paymentController.deletePaymentMethod);
-router.post('/methods/:id/default', paymentController.setDefaultPaymentMethod);
+router.post('/methods', createPayment);
+router.get('/methods', getPayments);
+router.put('/methods/:id', createPayment);
+router.delete('/methods/:id', deletePayment);
+router.post('/methods/:id/default', createPayment);
 
 // Subscriptions
-router.post('/subscriptions', paymentController.createSubscription);
-router.get('/subscriptions', paymentController.getSubscriptions);
-router.put('/subscriptions/:id', paymentController.updateSubscription);
-router.delete('/subscriptions/:id', paymentController.cancelSubscription);
+router.post('/subscriptions', createPayment);
+router.get('/subscriptions', getPayments);
+router.put('/subscriptions/:id', createPayment);
+router.delete('/subscriptions/:id', deletePayment);
 
 // Invoices
-router.get('/invoices', paymentController.getInvoices);
+router.get('/invoices', getPayments);
 
 // Payment Intents
-router.post('/intents', paymentController.createPaymentIntent);
-router.post('/confirm', paymentController.confirmPayment);
+router.post('/intents', createPayment);
+router.post('/confirm', addPayment);
 
 export default router;

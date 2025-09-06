@@ -324,3 +324,6 @@ export function useProtectedRoute(): void {
     }
   }, [state.isLoading, state.isAuthenticated, router]);
 }
+
+// Default export for compatibility
+export default AuthContext;

@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -26,30 +26,26 @@ export interface TokenPair {
  * Generate access token (short-lived)
  */
 export const generateAccessToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>): string => {
-  return jwt.sign(
-    payload,
-    JWT_SECRET as any,
-    { 
-      expiresIn: JWT_EXPIRE,
-      issuer: 'ototakibim-api',
-      audience: 'ototakibim-client'
-    }
-  ) as string;
+  const options: SignOptions = {
+    expiresIn: JWT_EXPIRE,
+    issuer: 'ototakibim-api',
+    audience: 'ototakibim-client'
+  };
+  
+  return jwt.sign(payload, JWT_SECRET, options);
 };
 
 /**
  * Generate refresh token (long-lived)
  */
 export const generateRefreshToken = (userId: string): string => {
-  return jwt.sign(
-    { id: userId, type: 'refresh' },
-    JWT_REFRESH_SECRET as any,
-    { 
-      expiresIn: JWT_REFRESH_EXPIRE,
-      issuer: 'ototakibim-api',
-      audience: 'ototakibim-client'
-    }
-  ) as string;
+  const options: SignOptions = {
+    expiresIn: JWT_REFRESH_EXPIRE,
+    issuer: 'ototakibim-api',
+    audience: 'ototakibim-client'
+  };
+  
+  return jwt.sign({ id: userId, type: 'refresh' }, JWT_REFRESH_SECRET, options);
 };
 
 /**
@@ -60,8 +56,8 @@ export const generateTokenPair = (payload: Omit<TokenPayload, 'iat' | 'exp'>): T
   const refreshToken = generateRefreshToken(payload.id);
   
   // Calculate expiration time in seconds
-  const expiresIn = jwt.decode(accessToken) as any;
-  const expirationTime = expiresIn ? expiresIn.exp - Math.floor(Date.now() / 1000) : 0;
+  const decoded = jwt.decode(accessToken) as any;
+  const expirationTime = decoded && decoded.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 0;
 
   return {
     accessToken,
@@ -75,10 +71,12 @@ export const generateTokenPair = (payload: Omit<TokenPayload, 'iat' | 'exp'>): T
  */
 export const verifyAccessToken = (token: string): TokenPayload | null => {
   try {
-    return jwt.verify(token, JWT_SECRET, {
+    const options: VerifyOptions = {
       issuer: 'ototakibim-api',
       audience: 'ototakibim-client'
-    }) as TokenPayload;
+    };
+    
+    return jwt.verify(token, JWT_SECRET, options) as TokenPayload;
   } catch (error) {
     console.error('Access token verification failed:', error);
     return null;
@@ -90,10 +88,12 @@ export const verifyAccessToken = (token: string): TokenPayload | null => {
  */
 export const verifyRefreshToken = (token: string): { id: string } | null => {
   try {
-    const payload = jwt.verify(token, JWT_REFRESH_SECRET, {
+    const options: VerifyOptions = {
       issuer: 'ototakibim-api',
       audience: 'ototakibim-client'
-    }) as any;
+    };
+    
+    const payload = jwt.verify(token, JWT_REFRESH_SECRET, options) as any;
     
     if (payload.type !== 'refresh') {
       throw new Error('Invalid token type');

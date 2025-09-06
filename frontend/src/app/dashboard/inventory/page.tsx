@@ -119,7 +119,7 @@ export default function InventoryPage() {
       const token = localStorage.getItem('ototakibim_token');
       if (!token) return;
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
       const params = new URLSearchParams();
       
       if (searchTerm) params.append('search', searchTerm);
@@ -149,7 +149,7 @@ export default function InventoryPage() {
       const token = localStorage.getItem('ototakibim_token');
       if (!token) return;
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
       const response = await fetch(`${API_BASE_URL}/api/inventory/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,

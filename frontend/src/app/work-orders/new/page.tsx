@@ -38,7 +38,7 @@ export default function NewWorkOrderPage() {
 
     try {
       // Backend API'ye gönder
-      const response = await fetch('http://localhost:5000/api/work-orders', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api'}/work-orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

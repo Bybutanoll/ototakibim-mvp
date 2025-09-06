@@ -131,7 +131,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // API Base URL
-const API_BASE_URL = 'https://ototakibim-mvp.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
 
 // Auth Provider Component
 export function AuthProvider({ children }: { children: ReactNode }) {

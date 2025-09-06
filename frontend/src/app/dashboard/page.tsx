@@ -123,7 +123,7 @@ export default function Dashboard() {
       }
 
       // Load vehicles data with timeout
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
@@ -222,7 +222,7 @@ export default function Dashboard() {
       const token = localStorage.getItem('ototakibim_token');
       if (!token) return;
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
       const response = await fetch(`${API_BASE_URL}/api/ai/dashboard-insights`, {
         headers: {
           'Authorization': `Bearer ${token}`,

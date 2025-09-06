@@ -154,7 +154,7 @@ function appointmentReducer(state: AppointmentState, action: AppointmentAction):
 const AppointmentContext = createContext<AppointmentContextType | undefined>(undefined);
 
 // API Base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
 
 // Appointment Provider Component
 export function AppointmentProvider({ children }: { children: ReactNode }) {

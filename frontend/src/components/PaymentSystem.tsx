@@ -69,7 +69,7 @@ export default function PaymentSystem() {
 
   const fetchPlans = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
       const response = await fetch(`${apiUrl}/api/payment/plans`);
       const data = await response.json();
       
@@ -88,7 +88,7 @@ export default function PaymentSystem() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
       const response = await fetch(`${apiUrl}/api/payment/subscription`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -109,7 +109,7 @@ export default function PaymentSystem() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
       const response = await fetch(`${apiUrl}/api/payment/invoices`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -136,7 +136,7 @@ export default function PaymentSystem() {
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
       const response = await fetch(`${apiUrl}/api/payment/subscription`, {
         method: 'POST',
         headers: {
@@ -175,7 +175,7 @@ export default function PaymentSystem() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
       const response = await fetch(`${apiUrl}/api/payment/subscription`, {
         method: 'DELETE',
         headers: {

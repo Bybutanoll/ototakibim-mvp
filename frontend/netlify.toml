@@ -6,10 +6,6 @@
   NODE_VERSION = "18"
   NEXT_PUBLIC_API_URL = "https://ototakibim-mvp.onrender.com"
 
-# Functions'ı tamamen devre dışı bırak - hiçbir dosyayı function olarak algılama
-[functions]
-  directory = ""
-
 # Next.js için gerekli redirects
 [[redirects]]
   from = "/*"

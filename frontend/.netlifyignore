@@ -3,16 +3,26 @@
 
 # Config dosyaları (serverless function olarak algılanmasın)
 eslint.config.mjs
+eslint.config.js
+eslint.config.ts
 next-env.d.ts
 next.config.js
 next.config.ts
 postcss.config.mjs
 postcss.config.js
+postcss.config.ts
 tailwind.config.ts
 tailwind.config.js
+tailwind.config.mjs
 
 # Tüm config dosyaları
 *.config.*
+*.config.js
+*.config.ts
+*.config.mjs
+
+# Netlify functions klasörü
+netlify/
 
 # Development dosyaları
 *.log

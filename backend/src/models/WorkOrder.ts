@@ -1,12 +1,41 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IWorkOrder extends Document {
-  customer: mongoose.Types.ObjectId; // User ID (müşteri)
+  owner: mongoose.Types.ObjectId; // User ID (servis sahibi)
+  customer: mongoose.Types.ObjectId; // Customer ID (müşteri)
   vehicle: mongoose.Types.ObjectId; // Vehicle ID
   assignedTechnician?: mongoose.Types.ObjectId; // User ID (teknisyen)
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold';
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold' | 'waiting-parts' | 'waiting-approval' | 'quality-check';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   type: 'maintenance' | 'repair' | 'inspection' | 'diagnostic' | 'emergency';
+  
+  // Workflow yönetimi
+  workflow: {
+    currentStep: number;
+    totalSteps: number;
+    steps: Array<{
+      stepNumber: number;
+      name: string;
+      status: 'pending' | 'in-progress' | 'completed' | 'skipped';
+      required: boolean;
+      estimatedTime: number; // dakika
+      actualTime?: number;
+      completedAt?: Date;
+      completedBy?: mongoose.Types.ObjectId;
+      notes?: string;
+    }>;
+    canTransition: (fromStatus: string, toStatus: string) => boolean;
+  };
+  
+  // Durum geçiş geçmişi
+  statusHistory: Array<{
+    fromStatus: string;
+    toStatus: string;
+    changedAt: Date;
+    changedBy: mongoose.Types.ObjectId;
+    reason?: string;
+    notes?: string;
+  }>;
   
   // İş emri detayları
   title: string;
@@ -101,9 +130,15 @@ export interface IWorkOrder extends Document {
 }
 
 const workOrderSchema = new Schema<IWorkOrder>({
-  customer: {
+  owner: {
     type: Schema.Types.ObjectId,
     ref: 'User',
+    required: true,
+    index: true
+  },
+  customer: {
+    type: Schema.Types.ObjectId,
+    ref: 'Customer',
     required: true,
     index: true
   },
@@ -120,7 +155,7 @@ const workOrderSchema = new Schema<IWorkOrder>({
   },
   status: {
     type: String,
-    enum: ['pending', 'in-progress', 'completed', 'cancelled', 'on-hold'],
+    enum: ['pending', 'in-progress', 'completed', 'cancelled', 'on-hold', 'waiting-parts', 'waiting-approval', 'quality-check'],
     default: 'pending',
     required: true
   },
@@ -135,6 +170,87 @@ const workOrderSchema = new Schema<IWorkOrder>({
     enum: ['maintenance', 'repair', 'inspection', 'diagnostic', 'emergency'],
     required: true
   },
+  
+  // Workflow yönetimi
+  workflow: {
+    currentStep: {
+      type: Number,
+      default: 1,
+      min: 1
+    },
+    totalSteps: {
+      type: Number,
+      default: 5,
+      min: 1
+    },
+    steps: [{
+      stepNumber: {
+        type: Number,
+        required: true
+      },
+      name: {
+        type: String,
+        required: true,
+        trim: true
+      },
+      status: {
+        type: String,
+        enum: ['pending', 'in-progress', 'completed', 'skipped'],
+        default: 'pending'
+      },
+      required: {
+        type: Boolean,
+        default: true
+      },
+      estimatedTime: {
+        type: Number,
+        required: true,
+        min: 0
+      },
+      actualTime: {
+        type: Number,
+        min: 0
+      },
+      completedAt: Date,
+      completedBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      notes: {
+        type: String,
+        trim: true
+      }
+    }]
+  },
+  
+  // Durum geçiş geçmişi
+  statusHistory: [{
+    fromStatus: {
+      type: String,
+      required: true
+    },
+    toStatus: {
+      type: String,
+      required: true
+    },
+    changedAt: {
+      type: Date,
+      default: Date.now
+    },
+    changedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    reason: {
+      type: String,
+      trim: true
+    },
+    notes: {
+      type: String,
+      trim: true
+    }
+  }],
   
   // İş emri detayları
   title: {
@@ -414,6 +530,7 @@ const workOrderSchema = new Schema<IWorkOrder>({
 });
 
 // Indexes
+workOrderSchema.index({ owner: 1, isActive: 1 });
 workOrderSchema.index({ customer: 1, status: 1 });
 workOrderSchema.index({ vehicle: 1, status: 1 });
 workOrderSchema.index({ assignedTechnician: 1, status: 1 });
@@ -426,5 +543,183 @@ workOrderSchema.index({
   title: 'text',
   description: 'text'
 });
+
+// Static method to find work orders by owner
+workOrderSchema.statics.findByOwner = function(ownerId: string) {
+  return this.find({ owner: ownerId, isActive: true })
+    .populate('customer', 'firstName lastName phone email')
+    .populate('vehicle', 'plate brand vehicleModel year')
+    .populate('assignedTechnician', 'firstName lastName')
+    .sort({ createdAt: -1 });
+};
+
+// Static method to find work orders by customer
+workOrderSchema.statics.findByCustomer = function(customerId: string) {
+  return this.find({ customer: customerId, isActive: true })
+    .populate('customer', 'firstName lastName phone email')
+    .populate('vehicle', 'plate brand vehicleModel year')
+    .populate('assignedTechnician', 'firstName lastName')
+    .sort({ createdAt: -1 });
+};
+
+// Static method to find work orders by vehicle
+workOrderSchema.statics.findByVehicle = function(vehicleId: string) {
+  return this.find({ vehicle: vehicleId, isActive: true })
+    .populate('customer', 'firstName lastName phone email')
+    .populate('vehicle', 'plate brand vehicleModel year')
+    .populate('assignedTechnician', 'firstName lastName')
+    .sort({ createdAt: -1 });
+};
+
+// Static method to search work orders
+workOrderSchema.statics.searchByOwner = function(ownerId: string, searchTerm: string) {
+  return this.find({
+    owner: ownerId,
+    isActive: true,
+    $or: [
+      { title: { $regex: searchTerm, $options: 'i' } },
+      { description: { $regex: searchTerm, $options: 'i' } },
+      { status: { $regex: searchTerm, $options: 'i' } },
+      { priority: { $regex: searchTerm, $options: 'i' } }
+    ]
+  })
+  .populate('customer', 'firstName lastName phone email')
+  .populate('vehicle', 'plate brand vehicleModel year')
+  .populate('assignedTechnician', 'firstName lastName')
+  .sort({ createdAt: -1 });
+};
+
+// Workflow yönetimi methodları
+workOrderSchema.methods.initializeWorkflow = function(type: string) {
+  const workflowTemplates = {
+    maintenance: [
+      { stepNumber: 1, name: 'Araç Teslim Alma', estimatedTime: 15, required: true },
+      { stepNumber: 2, name: 'Ön Muayene', estimatedTime: 30, required: true },
+      { stepNumber: 3, name: 'Bakım İşlemleri', estimatedTime: 120, required: true },
+      { stepNumber: 4, name: 'Test ve Kalite Kontrol', estimatedTime: 30, required: true },
+      { stepNumber: 5, name: 'Araç Teslim Etme', estimatedTime: 15, required: true }
+    ],
+    repair: [
+      { stepNumber: 1, name: 'Araç Teslim Alma', estimatedTime: 15, required: true },
+      { stepNumber: 2, name: 'Arıza Tespiti', estimatedTime: 60, required: true },
+      { stepNumber: 3, name: 'Müşteri Onayı', estimatedTime: 0, required: true },
+      { stepNumber: 4, name: 'Onarım İşlemleri', estimatedTime: 180, required: true },
+      { stepNumber: 5, name: 'Test ve Kalite Kontrol', estimatedTime: 45, required: true },
+      { stepNumber: 6, name: 'Araç Teslim Etme', estimatedTime: 15, required: true }
+    ],
+    inspection: [
+      { stepNumber: 1, name: 'Araç Teslim Alma', estimatedTime: 15, required: true },
+      { stepNumber: 2, name: 'Detaylı Muayene', estimatedTime: 90, required: true },
+      { stepNumber: 3, name: 'Rapor Hazırlama', estimatedTime: 30, required: true },
+      { stepNumber: 4, name: 'Müşteri Bilgilendirme', estimatedTime: 15, required: true },
+      { stepNumber: 5, name: 'Araç Teslim Etme', estimatedTime: 15, required: true }
+    ],
+    diagnostic: [
+      { stepNumber: 1, name: 'Araç Teslim Alma', estimatedTime: 15, required: true },
+      { stepNumber: 2, name: 'Elektronik Tanı', estimatedTime: 45, required: true },
+      { stepNumber: 3, name: 'Manuel Kontrol', estimatedTime: 30, required: true },
+      { stepNumber: 4, name: 'Rapor Hazırlama', estimatedTime: 20, required: true },
+      { stepNumber: 5, name: 'Müşteri Bilgilendirme', estimatedTime: 15, required: true },
+      { stepNumber: 6, name: 'Araç Teslim Etme', estimatedTime: 15, required: true }
+    ],
+    emergency: [
+      { stepNumber: 1, name: 'Acil Müdahale', estimatedTime: 30, required: true },
+      { stepNumber: 2, name: 'Geçici Çözüm', estimatedTime: 60, required: true },
+      { stepNumber: 3, name: 'Müşteri Bilgilendirme', estimatedTime: 10, required: true },
+      { stepNumber: 4, name: 'Kalıcı Onarım Planı', estimatedTime: 30, required: true },
+      { stepNumber: 5, name: 'Araç Teslim Etme', estimatedTime: 15, required: true }
+    ]
+  };
+
+  const template = workflowTemplates[type] || workflowTemplates.repair;
+  
+  this.workflow = {
+    currentStep: 1,
+    totalSteps: template.length,
+    steps: template.map(step => ({
+      ...step,
+      status: 'pending' as const
+    }))
+  };
+  
+  return this;
+};
+
+// Durum geçiş kuralları
+workOrderSchema.methods.canTransitionTo = function(newStatus: string) {
+  const validTransitions: { [key: string]: string[] } = {
+    'pending': ['in-progress', 'cancelled', 'on-hold'],
+    'in-progress': ['completed', 'cancelled', 'on-hold', 'waiting-parts', 'waiting-approval'],
+    'waiting-parts': ['in-progress', 'cancelled', 'on-hold'],
+    'waiting-approval': ['in-progress', 'cancelled', 'on-hold'],
+    'on-hold': ['in-progress', 'cancelled'],
+    'quality-check': ['completed', 'in-progress'],
+    'completed': [], // Tamamlanan iş emri değiştirilemez
+    'cancelled': [] // İptal edilen iş emri değiştirilemez
+  };
+
+  return validTransitions[this.status]?.includes(newStatus) || false;
+};
+
+// Durum değiştirme
+workOrderSchema.methods.changeStatus = function(newStatus: string, changedBy: string, reason?: string, notes?: string) {
+  if (!this.canTransitionTo(newStatus)) {
+    throw new Error(`Geçersiz durum geçişi: ${this.status} -> ${newStatus}`);
+  }
+
+  // Durum geçmişine ekle
+  this.statusHistory.push({
+    fromStatus: this.status,
+    toStatus: newStatus,
+    changedAt: new Date(),
+    changedBy: changedBy,
+    reason: reason,
+    notes: notes
+  });
+
+  // Durumu güncelle
+  this.status = newStatus;
+
+  // Duruma göre tarihleri güncelle
+  if (newStatus === 'in-progress' && !this.startDate) {
+    this.startDate = new Date();
+  } else if (newStatus === 'completed') {
+    this.completedDate = new Date();
+    if (this.startDate) {
+      this.actualDuration = (this.completedDate.getTime() - this.startDate.getTime()) / (1000 * 60 * 60);
+    }
+  }
+
+  return this;
+};
+
+// Workflow adımını tamamla
+workOrderSchema.methods.completeStep = function(stepNumber: number, completedBy: string, actualTime?: number, notes?: string) {
+  const step = this.workflow.steps.find(s => s.stepNumber === stepNumber);
+  if (!step) {
+    throw new Error(`Adım bulunamadı: ${stepNumber}`);
+  }
+
+  step.status = 'completed';
+  step.completedAt = new Date();
+  step.completedBy = completedBy;
+  step.actualTime = actualTime || step.estimatedTime;
+  step.notes = notes;
+
+  // Sonraki adıma geç
+  if (stepNumber < this.workflow.totalSteps) {
+    this.workflow.currentStep = stepNumber + 1;
+    const nextStep = this.workflow.steps.find(s => s.stepNumber === stepNumber + 1);
+    if (nextStep) {
+      nextStep.status = 'in-progress';
+    }
+  } else {
+    // Tüm adımlar tamamlandı
+    this.workflow.currentStep = this.workflow.totalSteps;
+    this.changeStatus('quality-check', completedBy, 'Tüm adımlar tamamlandı');
+  }
+
+  return this;
+};
 
 export default mongoose.model<IWorkOrder>('WorkOrder', workOrderSchema);

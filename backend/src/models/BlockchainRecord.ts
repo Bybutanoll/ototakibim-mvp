@@ -139,10 +139,8 @@ const blockchainRecordSchema = new Schema<IBlockchainRecord>({
   timestamps: true
 });
 
-// Indexes for efficient querying
+// Indexes for efficient querying (hash and transactionId already have unique: true)
 blockchainRecordSchema.index({ userId: 1, vehicleId: 1, recordType: 1 });
-blockchainRecordSchema.index({ hash: 1 });
-blockchainRecordSchema.index({ transactionId: 1 });
 blockchainRecordSchema.index({ isVerified: 1 });
 blockchainRecordSchema.index({ 'data.serviceDate': -1 });
 

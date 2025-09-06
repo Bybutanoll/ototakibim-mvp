@@ -1,83 +1,45 @@
 import express from 'express';
 import { body } from 'express-validator';
-import inventoryController from '../controllers/inventoryController';
+import {
+  getInventoryItems,
+  getInventoryItem,
+  createInventoryItem,
+  updateInventoryItem,
+  deleteInventoryItem,
+  getInventoryStats
+} from '../controllers/inventoryController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-// All inventory routes require authentication
-router.use(authenticateToken);
-
 // Validation middleware
-const inventoryValidation = [
-  body('name')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Parça adı 2-100 karakter arasında olmalıdır'),
-  body('category')
-    .isIn([
-      'engine', 'brake', 'suspension', 'electrical', 'body', 'interior', 
-      'exterior', 'transmission', 'fuel_system', 'cooling_system', 
-      'exhaust_system', 'tire', 'battery', 'filter', 'fluid', 'tool', 'other'
-    ])
-    .withMessage('Geçerli bir kategori seçiniz'),
-  body('sku')
-    .trim()
-    .isLength({ min: 3, max: 50 })
-    .withMessage('SKU 3-50 karakter arasında olmalıdır'),
-  body('quantity')
-    .isInt({ min: 0 })
-    .withMessage('Miktar 0\'dan büyük olmalıdır'),
-  body('minQuantity')
-    .isInt({ min: 0 })
-    .withMessage('Minimum miktar 0\'dan büyük olmalıdır'),
-  body('maxQuantity')
-    .isInt({ min: 0 })
-    .withMessage('Maksimum miktar 0\'dan büyük olmalıdır'),
-  body('unitPrice')
-    .isFloat({ min: 0 })
-    .withMessage('Birim fiyat 0\'dan büyük olmalıdır'),
-  body('costPrice')
-    .isFloat({ min: 0 })
-    .withMessage('Maliyet fiyatı 0\'dan büyük olmalıdır'),
-  body('sellingPrice')
-    .isFloat({ min: 0 })
-    .withMessage('Satış fiyatı 0\'dan büyük olmalıdır'),
-  body('description')
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage('Açıklama en fazla 500 karakter olabilir'),
-  body('brand')
-    .optional()
-    .trim()
-    .isLength({ max: 50 })
-    .withMessage('Marka adı en fazla 50 karakter olabilir'),
-  body('partNumber')
-    .optional()
-    .trim()
-    .isLength({ max: 50 })
-    .withMessage('Parça numarası en fazla 50 karakter olabilir')
+const createInventoryValidation = [
+  body('partNumber').trim().isLength({ min: 1, max: 50 }).withMessage('Parça numarası 1-50 karakter arası olmalı'),
+  body('name').trim().isLength({ min: 1, max: 200 }).withMessage('Parça adı 1-200 karakter arası olmalı'),
+  body('category').trim().isLength({ min: 1, max: 100 }).withMessage('Kategori 1-100 karakter arası olmalı'),
+  body('brand').trim().isLength({ min: 1, max: 100 }).withMessage('Marka 1-100 karakter arası olmalı'),
+  body('minimumStock').isInt({ min: 0 }).withMessage('Minimum stok pozitif tam sayı olmalı'),
+  body('maximumStock').isInt({ min: 1 }).withMessage('Maksimum stok pozitif tam sayı olmalı'),
+  body('costPrice').isFloat({ min: 0 }).withMessage('Maliyet fiyatı pozitif olmalı'),
+  body('sellingPrice').isFloat({ min: 0 }).withMessage('Satış fiyatı pozitif olmalı')
 ];
 
-const quantityValidation = [
-  body('quantity')
-    .isInt({ min: 0 })
-    .withMessage('Miktar 0\'dan büyük olmalıdır'),
-  body('operation')
-    .isIn(['add', 'subtract', 'set'])
-    .withMessage('Geçerli bir işlem türü seçiniz')
+const updateInventoryValidation = [
+  body('name').optional().trim().isLength({ min: 1, max: 200 }).withMessage('Parça adı 1-200 karakter arası olmalı'),
+  body('category').optional().trim().isLength({ min: 1, max: 100 }).withMessage('Kategori 1-100 karakter arası olmalı'),
+  body('brand').optional().trim().isLength({ min: 1, max: 100 }).withMessage('Marka 1-100 karakter arası olmalı'),
+  body('minimumStock').optional().isInt({ min: 0 }).withMessage('Minimum stok pozitif tam sayı olmalı'),
+  body('maximumStock').optional().isInt({ min: 1 }).withMessage('Maksimum stok pozitif tam sayı olmalı'),
+  body('costPrice').optional().isFloat({ min: 0 }).withMessage('Maliyet fiyatı pozitif olmalı'),
+  body('sellingPrice').optional().isFloat({ min: 0 }).withMessage('Satış fiyatı pozitif olmalı')
 ];
 
-// Inventory Routes
-router.get('/', inventoryController.getInventory);
-router.get('/stats', inventoryController.getInventoryStats);
-router.get('/low-stock', inventoryController.getLowStockItems);
-router.get('/compatible', inventoryController.getCompatibleParts);
-router.get('/:id', inventoryController.getInventoryItem);
-router.post('/', inventoryController.upload.array('images', 5), inventoryController.createInventoryItem);
-router.put('/:id', inventoryController.upload.array('images', 5), inventoryController.updateInventoryItem);
-router.delete('/:id', inventoryController.deleteInventoryItem);
-router.patch('/:id/quantity', quantityValidation, inventoryController.updateQuantity);
+// Routes
+router.get('/', authenticateToken, getInventoryItems);
+router.get('/stats', authenticateToken, getInventoryStats);
+router.get('/:id', authenticateToken, getInventoryItem);
+router.post('/', authenticateToken, createInventoryValidation, createInventoryItem);
+router.put('/:id', authenticateToken, updateInventoryValidation, updateInventoryItem);
+router.delete('/:id', authenticateToken, deleteInventoryItem);
 
 export default router;

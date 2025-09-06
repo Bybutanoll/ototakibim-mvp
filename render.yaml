@@ -1,0 +1,55 @@
+services:
+  # Backend API Service
+  - type: web
+    name: ototakibim-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: ototakibim-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        value: https://ototakibim.netlify.app
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: GOOGLE_ANALYTICS_ID
+        value: G-XXXXXXXXXX
+
+  # Database
+  - type: pserv
+    name: ototakibim-db
+    env: mongodb
+    plan: free
+    ipAllowList: []
+
+  # Frontend (Static Site)
+  - type: web
+    name: ototakibim-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: .next
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://ototakibim-backend.onrender.com/api
+      - key: NEXT_PUBLIC_APP_NAME
+        value: OtoTakibim
+      - key: NEXT_PUBLIC_APP_VERSION
+        value: 1.0.0
+      - key: NEXT_PUBLIC_ENABLE_ANALYTICS
+        value: true
+      - key: NEXT_PUBLIC_ENABLE_PWA
+        value: true

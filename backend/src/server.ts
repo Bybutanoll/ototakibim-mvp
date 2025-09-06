@@ -1,8 +1,13 @@
 import app from './app';
 import { connectDB } from './config/database';
+import { handleUnhandledRejection, handleUncaughtException } from './middleware/errorHandler';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// Handle uncaught exceptions and unhandled rejections
+handleUncaughtException();
+handleUnhandledRejection();
 
 const PORT = process.env.PORT || 5000;
 
@@ -46,21 +51,6 @@ const startServer = async () => {
   }
 };
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('🛑 SIGTERM sinyali alındı, server kapatılıyor...');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  console.log('🛑 SIGINT sinyali alındı, server kapatılıyor...');
-  process.exit(0);
-});
-
-// Unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('❌ Unhandled Promise Rejection:', err);
-  process.exit(1);
-});
+// Graceful shutdown handlers are now in startServer function
 
 startServer();

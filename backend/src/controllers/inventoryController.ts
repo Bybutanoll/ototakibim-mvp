@@ -1,480 +1,391 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import Inventory from '../models/Inventory';
+import Supplier from '../models/Supplier';
+import { catchAsync, CustomError } from '../middleware/errorHandler';
 
-// Multer configuration for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../../uploads/inventory');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
+// Demo mode kontrolü
+const isDemoMode = process.env.NODE_ENV !== 'production' && !process.env.MONGODB_URI;
+
+// Get all inventory items with pagination and search
+export const getInventoryItems = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    const demoInventory = [
+      {
+        _id: 'demo_inventory_1',
+        partNumber: 'FB-001',
+        name: 'Fren Balata Seti (Ön)',
+        description: 'Toyota Corolla için ön fren balata seti',
+        category: 'Fren Sistemi',
+        brand: 'Toyota Orijinal',
+        currentStock: 5,
+        minimumStock: 3,
+        maximumStock: 20,
+        reorderPoint: 5,
+        reorderQuantity: 10,
+        costPrice: 180,
+        sellingPrice: 250,
+        margin: 38.9,
+        location: {
+          warehouse: 'Ana Depo',
+          shelf: 'A-15',
+          bin: 'B-03',
+          zone: 'Fren Bölgesi'
+        },
+        unit: 'adet',
+        stockStatus: 'normal',
+        needsReorder: false,
+        stockValue: 900,
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+        updatedAt: new Date('2024-01-15T14:30:00Z')
+      },
+      {
+        _id: 'demo_inventory_2',
+        partNumber: 'FD-001',
+        name: 'Fren Diski (Ön)',
+        description: 'Toyota Corolla için ön fren diski',
+        category: 'Fren Sistemi',
+        brand: 'Toyota Orijinal',
+        currentStock: 2,
+        minimumStock: 4,
+        maximumStock: 15,
+        reorderPoint: 6,
+        reorderQuantity: 8,
+        costPrice: 35,
+        sellingPrice: 50,
+        margin: 42.9,
+        location: {
+          warehouse: 'Ana Depo',
+          shelf: 'A-15',
+          bin: 'B-04',
+          zone: 'Fren Bölgesi'
+        },
+        unit: 'adet',
+        stockStatus: 'low-stock',
+        needsReorder: true,
+        stockValue: 70,
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+        updatedAt: new Date('2024-01-15T14:30:00Z')
+      }
+    ];
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string || '';
+
+    let filteredInventory = demoInventory;
+    
+    if (search) {
+      filteredInventory = filteredInventory.filter(item =>
+        item.name.toLowerCase().includes(search.toLowerCase()) ||
+        item.partNumber.toLowerCase().includes(search.toLowerCase()) ||
+        item.description.toLowerCase().includes(search.toLowerCase()) ||
+        item.brand.toLowerCase().includes(search.toLowerCase())
+      );
     }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
 
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Sadece resim dosyaları yüklenebilir'));
-  }
-};
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedInventory = filteredInventory.slice(startIndex, endIndex);
 
-export const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 5 // Maximum 5 files
-  },
-  fileFilter: fileFilter
-});
-
-export const inventoryController = {
-  upload,
-  /**
-   * Get all inventory items for the authenticated user
-   */
-  async getInventory(req: Request, res: Response) {
-    try {
-      const userId = (req as any).user.id;
-      const { category, search, lowStock, page = 1, limit = 20 } = req.query;
-
-      let query: any = {
-        owner: userId,
-        isActive: true
-      };
-
-      // Filter by category
-      if (category && category !== 'all') {
-        query.category = category;
+    res.json({
+      status: 'success',
+      data: paginatedInventory,
+      pagination: {
+        current: page,
+        pages: Math.ceil(filteredInventory.length / limit),
+        total: filteredInventory.length
       }
+    });
+    return;
+  }
 
-      // Filter by low stock
-      if (lowStock === 'true') {
-        query.$expr = { $lte: ['$quantity', '$minQuantity'] };
-      }
+  const userId = (req as any).user?.id;
+  if (!userId) {
+    throw new CustomError('Kullanıcı kimliği bulunamadı', 401);
+  }
 
-      // Search functionality
-      if (search && typeof search === 'string') {
-        query.$or = [
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const search = req.query.search as string || '';
+
+  let query: any = { owner: userId, isActive: true };
+
+  if (search) {
+    query = {
+      ...query,
+      $or: [
           { name: { $regex: search, $options: 'i' } },
+        { partNumber: { $regex: search, $options: 'i' } },
           { description: { $regex: search, $options: 'i' } },
-          { sku: { $regex: search, $options: 'i' } },
-          { partNumber: { $regex: search, $options: 'i' } },
-          { brand: { $regex: search, $options: 'i' } },
-          { tags: { $regex: search, $options: 'i' } }
-        ];
-      }
+        { brand: { $regex: search, $options: 'i' } }
+      ]
+    };
+  }
 
-      const skip = (Number(page) - 1) * Number(limit);
-      const items = await Inventory.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(Number(limit));
+  const inventoryItems = await Inventory.find(query)
+    .populate('suppliers.supplierId', 'name contactInfo')
+    .populate('stockMovements.performedBy', 'firstName lastName')
+    .sort({ name: 1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
 
       const total = await Inventory.countDocuments(query);
 
       res.json({
         status: 'success',
-        data: {
-          items,
+    data: inventoryItems,
           pagination: {
-            current: Number(page),
-            pages: Math.ceil(total / Number(limit)),
-            total,
-            limit: Number(limit)
+      current: page,
+      pages: Math.ceil(total / limit),
+      total
+    }
+  });
+});
+
+// Get inventory statistics
+export const getInventoryStats = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    const stats = {
+      totalItems: 25,
+      totalValue: 125000,
+      lowStockItems: 8,
+      outOfStockItems: 3,
+      overstockItems: 2,
+      categories: {
+        'Fren Sistemi': 8,
+        'Motor Parçaları': 6,
+        'Yağ ve Sıvılar': 4,
+        'Elektrik': 3,
+        'Gövde': 2,
+        'Diğer': 2
+      }
+    };
+
+    res.json({ status: 'success', data: stats });
+    return;
+  }
+
+  const userId = (req as any).user?.id;
+  if (!userId) {
+    throw new CustomError('Kullanıcı kimliği bulunamadı', 401);
+  }
+
+  const stats = await Inventory.aggregate([
+    { $match: { owner: userId, isActive: true } },
+    {
+      $group: {
+        _id: null,
+        totalItems: { $sum: 1 },
+        totalValue: { $sum: { $multiply: ['$currentStock', '$costPrice'] } },
+        lowStockItems: {
+          $sum: {
+            $cond: [{ $lte: ['$currentStock', '$minimumStock'] }, 1, 0]
+          }
+        },
+        outOfStockItems: {
+          $sum: {
+            $cond: [{ $eq: ['$currentStock', 0] }, 1, 0]
           }
         }
-      });
-    } catch (error) {
-      console.error('Get inventory error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Envanter yüklenirken hata oluştu'
-      });
+      }
     }
-  },
+  ]);
 
-  /**
-   * Get a single inventory item
-   */
-  async getInventoryItem(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const userId = (req as any).user.id;
+  res.json({ status: 'success', data: stats[0] || {} });
+});
 
-      const item = await Inventory.findOne({
-        _id: id,
-        owner: userId,
-        isActive: true
-      });
+// Create new inventory item
+export const createInventoryItem = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    const newItem = {
+      _id: 'demo_inventory_new',
+      partNumber: req.body.partNumber || 'NEW-001',
+      name: req.body.name || 'Yeni Stok Öğesi',
+      description: req.body.description || 'Demo stok öğesi',
+      category: req.body.category || 'Genel',
+      brand: req.body.brand || 'Demo Marka',
+      currentStock: req.body.currentStock || 0,
+      minimumStock: req.body.minimumStock || 5,
+      maximumStock: req.body.maximumStock || 50,
+      costPrice: req.body.costPrice || 100,
+      sellingPrice: req.body.sellingPrice || 150,
+      margin: 50,
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
-      if (!item) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Envanter öğesi bulunamadı'
-        });
-      }
-
-      res.json({
-        status: 'success',
-        data: item
-      });
-    } catch (error) {
-      console.error('Get inventory item error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Envanter öğesi yüklenirken hata oluştu'
-      });
-    }
-  },
-
-  /**
-   * Create a new inventory item
-   */
-  async createInventoryItem(req: Request, res: Response) {
-    try {
-      const userId = (req as any).user.id;
-      
-      // Handle file uploads
-      const images: string[] = [];
-      if (req.files && Array.isArray(req.files)) {
-        images.push(...req.files.map((file: Express.Multer.File) => 
-          `/uploads/inventory/${file.filename}`
-        ));
-      }
-
-      const inventoryData = {
-        ...req.body,
-        owner: userId,
-        images: images,
-        quantity: parseInt(req.body.quantity) || 0,
-        minQuantity: parseInt(req.body.minQuantity) || 5,
-        maxQuantity: parseInt(req.body.maxQuantity) || 100,
-        unitPrice: parseFloat(req.body.unitPrice) || 0,
-        costPrice: parseFloat(req.body.costPrice) || 0,
-        sellingPrice: parseFloat(req.body.sellingPrice) || 0,
-        compatibility: req.body.compatibility ? JSON.parse(req.body.compatibility) : [],
-        specifications: req.body.specifications ? JSON.parse(req.body.specifications) : {},
-        tags: req.body.tags ? JSON.parse(req.body.tags) : []
-      };
-
-      const item = new Inventory(inventoryData);
-      await item.save();
-
-      res.status(201).json({
-        status: 'success',
-        data: item,
-        message: 'Envanter öğesi başarıyla oluşturuldu'
-      });
-    } catch (error) {
-      console.error('Create inventory item error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Envanter öğesi oluşturulurken hata oluştu'
-      });
-    }
-  },
-
-  /**
-   * Update an inventory item
-   */
-  async updateInventoryItem(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const userId = (req as any).user.id;
-
-      const item = await Inventory.findOne({
-        _id: id,
-        owner: userId,
-        isActive: true
-      });
-
-      if (!item) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Envanter öğesi bulunamadı'
-        });
-      }
-
-      // Handle file uploads
-      const newImages: string[] = [];
-      if (req.files && Array.isArray(req.files)) {
-        newImages.push(...req.files.map((file: Express.Multer.File) => 
-          `/uploads/inventory/${file.filename}`
-        ));
-      }
-
-      const updateData = {
-        ...req.body,
-        images: newImages.length > 0 ? newImages : item.images,
-        quantity: parseInt(req.body.quantity) || item.quantity,
-        minQuantity: parseInt(req.body.minQuantity) || item.minQuantity,
-        maxQuantity: parseInt(req.body.maxQuantity) || item.maxQuantity,
-        unitPrice: parseFloat(req.body.unitPrice) || item.unitPrice,
-        costPrice: parseFloat(req.body.costPrice) || item.costPrice,
-        sellingPrice: parseFloat(req.body.sellingPrice) || item.sellingPrice,
-        compatibility: req.body.compatibility ? JSON.parse(req.body.compatibility) : item.compatibility,
-        specifications: req.body.specifications ? JSON.parse(req.body.specifications) : item.specifications,
-        tags: req.body.tags ? JSON.parse(req.body.tags) : item.tags
-      };
-
-      const updatedItem = await Inventory.findByIdAndUpdate(
-        id,
-        updateData,
-        { new: true, runValidators: true }
-      );
-
-      res.json({
-        status: 'success',
-        data: updatedItem,
-        message: 'Envanter öğesi başarıyla güncellendi'
-      });
-    } catch (error) {
-      console.error('Update inventory item error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Envanter öğesi güncellenirken hata oluştu'
-      });
-    }
-  },
-
-  /**
-   * Delete an inventory item (soft delete)
-   */
-  async deleteInventoryItem(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const userId = (req as any).user.id;
-
-      const item = await Inventory.findOneAndUpdate(
-        {
-          _id: id,
-          owner: userId,
-          isActive: true
-        },
-        { isActive: false },
-        { new: true }
-      );
-
-      if (!item) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Envanter öğesi bulunamadı'
-        });
-      }
-
-      res.json({
-        status: 'success',
-        message: 'Envanter öğesi başarıyla silindi'
-      });
-    } catch (error) {
-      console.error('Delete inventory item error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Envanter öğesi silinirken hata oluştu'
-      });
-    }
-  },
-
-  /**
-   * Update inventory quantity
-   */
-  async updateQuantity(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const { quantity, operation } = req.body; // operation: 'add', 'subtract', 'set'
-      const userId = (req as any).user.id;
-
-      const item = await Inventory.findOne({
-        _id: id,
-        owner: userId,
-        isActive: true
-      });
-
-      if (!item) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Envanter öğesi bulunamadı'
-        });
-      }
-
-      let newQuantity = item.quantity;
-      switch (operation) {
-        case 'add':
-          newQuantity += quantity;
-          break;
-        case 'subtract':
-          newQuantity = Math.max(0, newQuantity - quantity);
-          break;
-        case 'set':
-          newQuantity = Math.max(0, quantity);
-          break;
-        default:
-          return res.status(400).json({
-            status: 'error',
-            message: 'Geçersiz işlem türü'
-          });
-      }
-
-      const updatedItem = await Inventory.findByIdAndUpdate(
-        id,
-        { quantity: newQuantity },
-        { new: true }
-      );
-
-      res.json({
-        status: 'success',
-        data: updatedItem,
-        message: 'Miktar başarıyla güncellendi'
-      });
-    } catch (error) {
-      console.error('Update quantity error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Miktar güncellenirken hata oluştu'
-      });
-    }
-  },
-
-  /**
-   * Get low stock items
-   */
-  async getLowStockItems(req: Request, res: Response) {
-    try {
-      const userId = (req as any).user.id;
-
-      const items = await Inventory.find({
-        owner: userId,
-        isActive: true,
-        $expr: { $lte: ['$quantity', '$minQuantity'] }
-      }).sort({ quantity: 1 });
-
-      res.json({
-        status: 'success',
-        data: items
-      });
-    } catch (error) {
-      console.error('Get low stock items error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Düşük stok öğeleri yüklenirken hata oluştu'
-      });
-    }
-  },
-
-  /**
-   * Get compatible parts for a vehicle
-   */
-  async getCompatibleParts(req: Request, res: Response) {
-    try {
-      const { make, model, year, category } = req.query;
-      const userId = (req as any).user.id;
-
-      if (!make || !model) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Marka ve model gereklidir'
-        });
-      }
-
-      let query: any = {
-        owner: userId,
-        isActive: true,
-        'compatibility.make': { $regex: new RegExp(make as string, 'i') },
-        'compatibility.model': { $regex: new RegExp(model as string, 'i') }
-      };
-
-      if (year) {
-        query.$or = [
-          { 'compatibility.yearFrom': { $exists: false } },
-          { 'compatibility.yearFrom': { $lte: Number(year) } },
-          { 'compatibility.yearTo': { $exists: false } },
-          { 'compatibility.yearTo': { $gte: Number(year) } }
-        ];
-      }
-
-      if (category && category !== 'all') {
-        query.category = category;
-      }
-
-      const items = await Inventory.find(query).sort({ name: 1 });
-
-      res.json({
-        status: 'success',
-        data: items
-      });
-    } catch (error) {
-      console.error('Get compatible parts error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Uyumlu parçalar yüklenirken hata oluştu'
-      });
-    }
-  },
-
-  /**
-   * Get inventory statistics
-   */
-  async getInventoryStats(req: Request, res: Response) {
-    try {
-      const userId = (req as any).user.id;
-
-      const [
-        totalItems,
-        lowStockItems,
-        outOfStockItems,
-        totalValue,
-        categoryStats
-      ] = await Promise.all([
-        Inventory.countDocuments({ owner: userId, isActive: true }),
-        Inventory.countDocuments({
-          owner: userId,
-          isActive: true,
-          $expr: { $lte: ['$quantity', '$minQuantity'] }
-        }),
-        Inventory.countDocuments({
-          owner: userId,
-          isActive: true,
-          quantity: 0
-        }),
-        Inventory.aggregate([
-          { $match: { owner: userId, isActive: true } },
-          { $group: { _id: null, total: { $sum: { $multiply: ['$quantity', '$costPrice'] } } } }
-        ]),
-        Inventory.aggregate([
-          { $match: { owner: userId, isActive: true } },
-          { $group: { _id: '$category', count: { $sum: 1 } } },
-          { $sort: { count: -1 } }
-        ])
-      ]);
-
-      res.json({
-        status: 'success',
-        data: {
-          totalItems,
-          lowStockItems,
-          outOfStockItems,
-          totalValue: totalValue[0]?.total || 0,
-          categoryStats
-        }
-      });
-    } catch (error) {
-      console.error('Get inventory stats error:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Envanter istatistikleri yüklenirken hata oluştu'
-      });
-    }
+    res.status(201).json({ status: 'success', message: 'Stok öğesi başarıyla oluşturuldu', data: newItem });
+    return;
   }
-};
 
-export default inventoryController;
+  const userId = (req as any).user?.id;
+  if (!userId) {
+    throw new CustomError('Kullanıcı kimliği bulunamadı', 401);
+  }
+
+  const {
+    partNumber,
+    name,
+    description,
+    category,
+    brand,
+    currentStock,
+    minimumStock,
+    maximumStock,
+    costPrice,
+    sellingPrice
+  } = req.body;
+
+  // Check if part number already exists
+  const existingItem = await Inventory.findOne({ partNumber, owner: userId, isActive: true });
+  if (existingItem) {
+    throw new CustomError('Bu parça numarası zaten mevcut', 400);
+  }
+
+  // Create inventory item
+  const inventoryItem = new Inventory({
+        owner: userId,
+    partNumber,
+    name,
+    description,
+    category,
+    brand,
+    currentStock: currentStock || 0,
+    minimumStock,
+    maximumStock,
+    reorderPoint: minimumStock,
+    reorderQuantity: Math.ceil(maximumStock * 0.5),
+    costPrice,
+    sellingPrice,
+    margin: ((sellingPrice - costPrice) / costPrice) * 100,
+    location: {
+      warehouse: 'Ana Depo',
+      shelf: '',
+      bin: '',
+      zone: ''
+    },
+    unit: 'adet',
+    warranty: {
+      duration: 0,
+      type: 'none'
+    },
+    stockMovements: [],
+    autoReorder: {
+      enabled: false,
+      reorderFrequency: 30
+    },
+    status: 'active'
+  });
+
+  await inventoryItem.save();
+
+  res.status(201).json({ status: 'success', message: 'Stok öğesi başarıyla oluşturuldu', data: inventoryItem });
+});
+
+// Get single inventory item
+export const getInventoryItem = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    const demoItem = {
+      _id: 'demo_inventory_1',
+      partNumber: 'FB-001',
+      name: 'Fren Balata Seti (Ön)',
+      description: 'Toyota Corolla için ön fren balata seti',
+      category: 'Fren Sistemi',
+      brand: 'Toyota Orijinal',
+      currentStock: 5,
+      minimumStock: 3,
+      maximumStock: 20,
+      costPrice: 180,
+      sellingPrice: 250,
+      margin: 38.9,
+      status: 'active',
+      createdAt: new Date('2024-01-01T10:00:00Z'),
+      updatedAt: new Date('2024-01-15T14:30:00Z')
+    };
+
+    res.json({ status: 'success', data: demoItem });
+    return;
+  }
+
+      const { id } = req.params;
+  const userId = (req as any).user?.id;
+
+  if (!userId) {
+    throw new CustomError('Kullanıcı kimliği bulunamadı', 401);
+  }
+
+  const inventoryItem = await Inventory.findOne({ _id: id, owner: userId, isActive: true });
+  if (!inventoryItem) {
+    throw new CustomError('Stok öğesi bulunamadı', 404);
+  }
+
+  res.json({ status: 'success', data: inventoryItem });
+});
+
+// Update inventory item
+export const updateInventoryItem = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    res.json({ status: 'success', message: 'Stok öğesi başarıyla güncellendi' });
+    return;
+  }
+
+      const { id } = req.params;
+  const userId = (req as any).user?.id;
+
+  if (!userId) {
+    throw new CustomError('Kullanıcı kimliği bulunamadı', 401);
+  }
+
+  const inventoryItem = await Inventory.findOne({ _id: id, owner: userId, isActive: true });
+  if (!inventoryItem) {
+    throw new CustomError('Stok öğesi bulunamadı', 404);
+  }
+
+  // Update fields
+  const allowedUpdates = [
+    'name', 'description', 'category', 'brand',
+    'minimumStock', 'maximumStock', 'costPrice', 'sellingPrice', 'status'
+  ];
+
+  allowedUpdates.forEach(field => {
+    if (req.body[field] !== undefined) {
+      (inventoryItem as any)[field] = req.body[field];
+    }
+  });
+
+  // Recalculate margin
+  if (req.body.costPrice !== undefined || req.body.sellingPrice !== undefined) {
+    inventoryItem.margin = ((inventoryItem.sellingPrice - inventoryItem.costPrice) / inventoryItem.costPrice) * 100;
+  }
+
+  await inventoryItem.save();
+
+  res.json({ status: 'success', message: 'Stok öğesi başarıyla güncellendi', data: inventoryItem });
+});
+
+// Delete inventory item
+export const deleteInventoryItem = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    res.json({ status: 'success', message: 'Stok öğesi başarıyla silindi' });
+    return;
+  }
+
+  const { id } = req.params;
+  const userId = (req as any).user?.id;
+
+  if (!userId) {
+    throw new CustomError('Kullanıcı kimliği bulunamadı', 401);
+  }
+
+  const inventoryItem = await Inventory.findOne({ _id: id, owner: userId, isActive: true });
+  if (!inventoryItem) {
+    throw new CustomError('Stok öğesi bulunamadı', 404);
+  }
+
+  inventoryItem.isActive = false;
+  await inventoryItem.save();
+
+  res.json({ status: 'success', message: 'Stok öğesi başarıyla silindi' });
+});

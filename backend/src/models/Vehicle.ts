@@ -1,7 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IVehicle extends Document {
-  owner: mongoose.Types.ObjectId; // User ID
+  owner: mongoose.Types.ObjectId; // User ID (servis sahibi)
+  customer: mongoose.Types.ObjectId; // Customer ID (araç sahibi)
   plate: string; // Plaka
   brand: string; // Marka
   vehicleModel: string; // Model
@@ -28,15 +29,24 @@ export interface IVehicle extends Document {
     mileage: number;
     workshop?: string;
   }>;
+  qrCode?: string; // QR kod
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  // Virtual fields
+  fullName: string; // Marka + Model + Yıl
 }
 
 const vehicleSchema = new Schema<IVehicle>({
   owner: {
     type: Schema.Types.ObjectId,
     ref: 'User',
+    required: true,
+    index: true
+  },
+  customer: {
+    type: Schema.Types.ObjectId,
+    ref: 'Customer',
     required: true,
     index: true
   },
@@ -155,23 +165,67 @@ const vehicleSchema = new Schema<IVehicle>({
       trim: true
     }
   }],
+  qrCode: {
+    type: String,
+    trim: true
+  },
   isActive: {
     type: Boolean,
     default: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
-// Compound index for owner and plate
-vehicleSchema.index({ owner: 1, plate: 1 }, { unique: true });
+// Virtual for full name
+vehicleSchema.virtual('fullName').get(function() {
+  return `${this.brand} ${this.vehicleModel} ${this.year}`;
+});
+
+// Indexes for better performance
+vehicleSchema.index({ owner: 1, isActive: 1 });
+vehicleSchema.index({ customer: 1, isActive: 1 });
+vehicleSchema.index({ plate: 1, owner: 1 }, { unique: true });
+vehicleSchema.index({ vin: 1, owner: 1 }, { unique: true });
 
 // Text search index
 vehicleSchema.index({
   brand: 'text',
-  model: 'text',
+  vehicleModel: 'text',
   plate: 'text',
   vin: 'text'
 });
+
+// Static method to find vehicles by owner
+vehicleSchema.statics.findByOwner = function(ownerId: string) {
+  return this.find({ owner: ownerId, isActive: true })
+    .populate('customer', 'firstName lastName phone email')
+    .sort({ createdAt: -1 });
+};
+
+// Static method to find vehicles by customer
+vehicleSchema.statics.findByCustomer = function(customerId: string) {
+  return this.find({ customer: customerId, isActive: true })
+    .populate('customer', 'firstName lastName phone email')
+    .sort({ createdAt: -1 });
+};
+
+// Static method to search vehicles
+vehicleSchema.statics.searchByOwner = function(ownerId: string, searchTerm: string) {
+  return this.find({
+    owner: ownerId,
+    isActive: true,
+    $or: [
+      { plate: { $regex: searchTerm, $options: 'i' } },
+      { brand: { $regex: searchTerm, $options: 'i' } },
+      { vehicleModel: { $regex: searchTerm, $options: 'i' } },
+      { vin: { $regex: searchTerm, $options: 'i' } }
+    ]
+  })
+  .populate('customer', 'firstName lastName phone email')
+  .sort({ createdAt: -1 });
+};
 
 export default mongoose.model<IVehicle>('Vehicle', vehicleSchema);

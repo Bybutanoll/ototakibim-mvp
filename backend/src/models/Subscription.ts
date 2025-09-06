@@ -30,8 +30,7 @@ const subscriptionSchema = new Schema<ISubscription>({
   },
   stripeCustomerId: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   stripeSubscriptionId: {
     type: String,

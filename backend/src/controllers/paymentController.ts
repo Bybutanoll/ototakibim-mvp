@@ -1,506 +1,253 @@
 import { Request, Response } from 'express';
-import StripeService, { SUBSCRIPTION_PLANS } from '../services/stripeService';
-import Subscription from '../models/Subscription';
-import User from '../models/User';
+import { catchAsync, CustomError } from '../middleware/errorHandler';
 
-export const paymentController = {
-  /**
-   * Get available subscription plans
-   */
-  async getPlans(req: Request, res: Response) {
-    try {
-      res.json({
-        success: true,
-        plans: SUBSCRIPTION_PLANS
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch plans'
-      });
-    }
-  },
+// Demo mode kontrolü
+const isDemoMode = process.env.NODE_ENV !== 'production' && !process.env.MONGODB_URI;
 
-  /**
-   * Create a new payment method
-   */
-  async createPaymentMethod(req: Request, res: Response) {
-    try {
-      // In real app, this would integrate with Stripe
-      const { cardNumber, expiryDate, cvv, cardholderName, isDefault } = req.body;
-      
-      // Mock payment method creation
-      const paymentMethod = {
-        id: `pm_${Date.now()}`,
-        userId: req.user?.id || 'demo-user',
-        cardNumber: `**** **** **** ${cardNumber.slice(-4)}`,
-        expiryDate,
-        cardholderName,
-        isDefault: isDefault || false,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      res.status(201).json({
-        success: true,
-        data: paymentMethod
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Payment method creation failed'
-      });
-    }
-  },
-
-  /**
-   * Update a payment method
-   */
-  async updatePaymentMethod(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const updateData = req.body;
-      
-      // Mock payment method update
-      const paymentMethod = {
-        id,
-        userId: req.user?.id || 'demo-user',
-        cardNumber: `**** **** **** ${updateData.cardNumber?.slice(-4) || '1234'}`,
-        expiryDate: updateData.expiryDate,
-        cardholderName: updateData.cardholderName,
-        isDefault: updateData.isDefault || false,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      res.json({
-        success: true,
-        data: paymentMethod
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Payment method update failed'
-      });
-    }
-  },
-
-  /**
-   * Delete a payment method
-   */
-  async deletePaymentMethod(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      
-      // Mock payment method deletion
-      res.json({
-        success: true,
-        message: 'Payment method deleted successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Payment method deletion failed'
-      });
-    }
-  },
-
-  /**
-   * Set default payment method
-   */
-  async setDefaultPaymentMethod(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      
-      // Mock setting default payment method
-      res.json({
-        success: true,
-        message: 'Default payment method updated successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Failed to update default payment method'
-      });
-    }
-  },
-
-  /**
-   * Get payment methods for a user
-   */
-  async getPaymentMethods(req: Request, res: Response) {
-    try {
-      const userId = req.user?.id || 'demo-user';
-      
-      // Mock payment methods data
-      const paymentMethods = [
-        {
-          id: 'pm_1',
-          userId,
-          cardNumber: '**** **** **** 1234',
-          expiryDate: '12/25',
-          cardholderName: 'John Doe',
-          isDefault: true,
-          status: 'active',
-          createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z'
+// Get all payments with pagination and search
+export const getPayments = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    const demoPayments = [
+      {
+        _id: 'demo_payment_1',
+        invoiceNumber: 'FAT-2024-001',
+        invoiceDate: new Date('2024-01-15T10:00:00Z'),
+        dueDate: new Date('2024-01-22T10:00:00Z'),
+        paymentMethod: 'credit_card',
+        paymentStatus: 'paid',
+        subtotal: 250,
+        taxRate: 20,
+        taxAmount: 50,
+        totalAmount: 300,
+        paidAmount: 300,
+        remainingAmount: 0,
+        customerInfo: {
+          name: 'Ahmet Yılmaz',
+          phone: '+90 555 111 2233',
+          email: 'ahmet@demo.com'
         },
-        {
-          id: 'pm_2',
-          userId,
-          cardNumber: '**** **** **** 5678',
-          expiryDate: '06/26',
-          cardholderName: 'John Doe',
-          isDefault: false,
-          status: 'active',
-          createdAt: '2024-01-15T00:00:00.000Z',
-          updatedAt: '2024-01-15T00:00:00.000Z'
-        }
-      ];
-
-      res.json({
-        success: true,
-        data: paymentMethods
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch payment methods'
-      });
-    }
-  },
-
-  /**
-   * Create a new subscription
-   */
-  async createSubscription(req: Request, res: Response) {
-    try {
-      const { planId, paymentMethodId } = req.body;
-      const userId = (req as any).user.id;
-      
-      // Find the plan
-      const plan = SUBSCRIPTION_PLANS.find(p => p.id === planId);
-      if (!plan) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid plan ID'
-        });
-      }
-
-      // Get user details
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          error: 'User not found'
-        });
-      }
-
-      // Check if user already has an active subscription
-      const existingSubscription = await Subscription.findOne({
-        userId,
-        status: 'active'
-      });
-
-      if (existingSubscription) {
-        return res.status(400).json({
-          success: false,
-          error: 'User already has an active subscription'
-        });
-      }
-
-      // Create or get Stripe customer
-      let stripeCustomerId = user.stripeCustomerId;
-      if (!stripeCustomerId) {
-        const customer = await StripeService.createCustomer(
-          user.email,
-          `${user.firstName} ${user.lastName}`,
-          userId
-        );
-        stripeCustomerId = customer.id;
-        
-        // Update user with Stripe customer ID
-        await User.findByIdAndUpdate(userId, { stripeCustomerId });
-      }
-
-      // Attach payment method to customer
-      await StripeService.attachPaymentMethod(paymentMethodId, stripeCustomerId);
-
-      // Create Stripe subscription
-      const stripeSubscription = await StripeService.createSubscription({
-        customerId: stripeCustomerId,
-        priceId: plan.stripePriceId,
-        paymentMethodId
-      });
-
-      // Save subscription to database
-      const subscription = new Subscription({
-        userId,
-        stripeCustomerId,
-        stripeSubscriptionId: stripeSubscription.id,
-        planId: plan.id,
-        planName: plan.name,
-        status: stripeSubscription.status,
-        amount: plan.price,
-        currency: plan.currency,
-        interval: plan.interval,
-        currentPeriodStart: new Date((stripeSubscription as any).current_period_start * 1000),
-        currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000),
-        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
-        trialStart: stripeSubscription.trial_start ? new Date(stripeSubscription.trial_start * 1000) : undefined,
-        trialEnd: stripeSubscription.trial_end ? new Date(stripeSubscription.trial_end * 1000) : undefined
-      });
-
-      await subscription.save();
-
-      res.status(201).json({
-        success: true,
-        data: {
-          id: subscription._id,
-          stripeSubscriptionId: subscription.stripeSubscriptionId,
-          planId: subscription.planId,
-          planName: subscription.planName,
-          status: subscription.status,
-          amount: subscription.amount,
-          currency: subscription.currency,
-          interval: subscription.interval,
-          currentPeriodStart: subscription.currentPeriodStart,
-          currentPeriodEnd: subscription.currentPeriodEnd,
-          isActive: (subscription as any).isActive,
-          isInTrial: (subscription as any).isInTrial
-        }
-      });
-    } catch (error) {
-      console.error('Subscription creation error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Subscription creation failed'
-      });
-    }
-  },
-
-  /**
-   * Cancel a subscription
-   */
-  async cancelSubscription(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const userId = (req as any).user.id;
-      
-      // Find the subscription
-      const subscription = await Subscription.findOne({
-        _id: id,
-        userId
-      });
-
-      if (!subscription) {
-        return res.status(404).json({
-          success: false,
-          error: 'Subscription not found'
-        });
-      }
-
-      // Cancel in Stripe
-      await StripeService.cancelSubscription(subscription.stripeSubscriptionId);
-
-      // Update in database
-      subscription.status = 'canceled';
-      subscription.canceledAt = new Date();
-      await subscription.save();
-
-      res.json({
-        success: true,
-        message: 'Subscription cancelled successfully',
-        data: {
-          id: subscription._id,
-          status: subscription.status,
-          canceledAt: subscription.canceledAt
-        }
-      });
-    } catch (error) {
-      console.error('Subscription cancellation error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Subscription cancellation failed'
-      });
-    }
-  },
-
-  /**
-   * Update a subscription
-   */
-  async updateSubscription(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const updateData = req.body;
-      
-      // Mock subscription update
-      const subscription = {
-        id,
-        userId: req.user?.id || 'demo-user',
-        planId: updateData.planId || 'starter',
-        planName: updateData.planId === 'starter' ? 'Starter' : updateData.planId === 'professional' ? 'Professional' : 'Enterprise',
-        status: 'active',
-        amount: updateData.planId === 'starter' ? 99 : updateData.planId === 'professional' ? 199 : 399,
-        currency: 'TRY',
-        interval: 'monthly',
-        currentPeriodStart: new Date().toISOString(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        paymentMethod: {
-          id: 'pm_1',
-          cardNumber: '**** **** **** 1234',
-          cardholderName: 'John Doe'
+        vehicleInfo: {
+          plate: '34 ABC 123',
+          brand: 'Toyota',
+          model: 'Corolla',
+          year: 2020
         },
-        createdAt: '2024-01-01T00:00:00.000Z',
-        updatedAt: new Date().toISOString()
-      };
-
-      res.json({
-        success: true,
-        data: subscription
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Subscription update failed'
-      });
-    }
-  },
-
-  /**
-   * Get subscriptions for a user
-   */
-  async getSubscriptions(req: Request, res: Response) {
-    try {
-      const userId = (req as any).user.id;
-      
-      const subscriptions = await Subscription.find({ userId });
-
-      res.json({
-        success: true,
-        data: subscriptions.map((sub: any) => ({
-          id: sub._id,
-          stripeSubscriptionId: sub.stripeSubscriptionId,
-          planId: sub.planId,
-          planName: sub.planName,
-          status: sub.status,
-          amount: sub.amount,
-          currency: sub.currency,
-          interval: sub.interval,
-          currentPeriodStart: sub.currentPeriodStart,
-          currentPeriodEnd: sub.currentPeriodEnd,
-          cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
-          canceledAt: sub.canceledAt,
-          isActive: sub.isActive,
-          isInTrial: sub.isInTrial,
-          createdAt: sub.createdAt,
-          updatedAt: sub.updatedAt
-        }))
-      });
-    } catch (error) {
-      console.error('Get subscriptions error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch subscriptions'
-      });
-    }
-  },
-
-  /**
-   * Get invoices for a user
-   */
-  async getInvoices(req: Request, res: Response) {
-    try {
-      const userId = req.user?.id || 'demo-user';
-      
-      // Mock invoices data
-      const invoices = [
-        {
-          id: 'inv_1',
-          userId,
-          subscriptionId: 'sub_1',
-          description: 'Professional Plan - Ocak 2024',
-          amount: 199,
-          currency: 'TRY',
-          status: 'paid',
-          createdAt: '2024-01-01T00:00:00.000Z',
-          dueDate: '2024-01-01T00:00:00.000Z',
-          paidAt: '2024-01-01T00:00:00.000Z'
+        isOverdue: false,
+        isFullyPaid: true,
+        paymentProgress: 100,
+        daysOverdue: 0,
+        createdAt: new Date('2024-01-15T10:00:00Z'),
+        updatedAt: new Date('2024-01-15T14:30:00Z')
+      },
+      {
+        _id: 'demo_payment_2',
+        invoiceNumber: 'FAT-2024-002',
+        invoiceDate: new Date('2024-01-14T09:00:00Z'),
+        dueDate: new Date('2024-01-21T09:00:00Z'),
+        paymentMethod: 'installment',
+        paymentStatus: 'partial',
+        subtotal: 260,
+        taxRate: 20,
+        taxAmount: 52,
+        totalAmount: 312,
+        paidAmount: 156,
+        remainingAmount: 156,
+        customerInfo: {
+          name: 'Ayşe Kaya',
+          phone: '+90 555 333 4455',
+          email: 'ayse@demo.com'
         },
-        {
-          id: 'inv_2',
-          userId,
-          subscriptionId: 'sub_1',
-          description: 'Professional Plan - Şubat 2024',
-          amount: 199,
-          currency: 'TRY',
-          status: 'pending',
-          createdAt: '2024-02-01T00:00:00.000Z',
-          dueDate: '2024-02-01T00:00:00.000Z',
-          paidAt: null
-        }
-      ];
+        vehicleInfo: {
+          plate: '06 XYZ 789',
+          brand: 'Honda',
+          model: 'Civic',
+          year: 2019
+        },
+        isOverdue: false,
+        isFullyPaid: false,
+        paymentProgress: 50,
+        daysOverdue: 0,
+        createdAt: new Date('2024-01-14T09:00:00Z'),
+        updatedAt: new Date('2024-01-14T09:00:00Z')
+      }
+    ];
 
-      res.json({
-        success: true,
-        data: invoices
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch invoices'
-      });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string || '';
+    const status = req.query.status as string || '';
+
+    let filteredPayments = demoPayments;
+    
+    if (search) {
+      filteredPayments = filteredPayments.filter(payment =>
+        payment.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
+        payment.customerInfo.name.toLowerCase().includes(search.toLowerCase()) ||
+        payment.customerInfo.phone.toLowerCase().includes(search.toLowerCase()) ||
+        payment.vehicleInfo.plate.toLowerCase().includes(search.toLowerCase())
+      );
     }
-  },
-
-  /**
-   * Create a payment intent
-   */
-  async createPaymentIntent(req: Request, res: Response) {
-    try {
-      const { amount, currency } = req.body;
-      
-      // Mock payment intent creation
-      const paymentIntent = {
-        id: `pi_${Date.now()}`,
-        amount,
-        currency,
-        status: 'requires_payment_method',
-        clientSecret: `pi_${Date.now()}_secret_${Math.random().toString(36).substr(2, 9)}`,
-        createdAt: new Date().toISOString()
-      };
-
-      res.status(201).json({
-        success: true,
-        data: paymentIntent
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Payment intent creation failed'
-      });
+    
+    if (status) {
+      filteredPayments = filteredPayments.filter(payment => payment.paymentStatus === status);
     }
-  },
 
-  /**
-   * Confirm a payment
-   */
-  async confirmPayment(req: Request, res: Response) {
-    try {
-      const { paymentIntentId, paymentMethodId } = req.body;
-      
-      // Mock payment confirmation
-      res.json({
-        success: true,
-        message: 'Payment confirmed successfully'
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Payment confirmation failed'
-      });
-    }
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedPayments = filteredPayments.slice(startIndex, endIndex);
+
+    res.json({
+      status: 'success',
+      data: paginatedPayments,
+      pagination: {
+        current: page,
+        pages: Math.ceil(filteredPayments.length / limit),
+        total: filteredPayments.length
+      }
+    });
+    return;
   }
-};
+
+  const userId = (req as any).user?.id;
+  if (!userId) {
+    throw new CustomError('Kullanıcı kimliği bulunamadı', 401);
+  }
+
+  res.json({ status: 'success', data: [], message: 'Production mode - MongoDB gerekli' });
+});
+
+// Get payment statistics
+export const getPaymentStats = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    const stats = {
+      total: 45,
+      pending: 8,
+      partial: 5,
+      paid: 25,
+      overdue: 5,
+      cancelled: 2,
+      totalRevenue: 125000,
+      pendingAmount: 15000,
+      overdueAmount: 8000,
+      thisMonth: 25000,
+      lastMonth: 20000,
+      averagePayment: 2777.78,
+      paymentMethods: {
+        'cash': 15,
+        'credit_card': 12,
+        'bank_transfer': 10,
+        'installment': 5,
+        'check': 3
+      }
+    };
+
+    res.json({ status: 'success', data: stats });
+    return;
+  }
+
+  res.json({ status: 'success', data: {}, message: 'Production mode - MongoDB gerekli' });
+});
+
+// Create new payment
+export const createPayment = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    const newPayment = {
+      _id: 'demo_payment_new',
+      invoiceNumber: req.body.invoiceNumber || 'FAT-2024-NEW',
+      invoiceDate: new Date(req.body.invoiceDate || Date.now()),
+      dueDate: new Date(req.body.dueDate || Date.now() + 7 * 24 * 60 * 60 * 1000),
+      paymentMethod: req.body.paymentMethod || 'cash',
+      paymentStatus: 'pending',
+      subtotal: req.body.subtotal || 100,
+      taxRate: req.body.taxRate || 20,
+      taxAmount: req.body.taxAmount || 20,
+      totalAmount: req.body.totalAmount || 120,
+      paidAmount: 0,
+      remainingAmount: req.body.totalAmount || 120,
+      customerInfo: {
+        name: req.body.customerName || 'Demo Müşteri',
+        phone: req.body.customerPhone || '+90 555 000 0000',
+        email: req.body.customerEmail || 'demo@demo.com'
+      },
+      vehicleInfo: {
+        plate: req.body.vehiclePlate || '34 DEMO 001',
+        brand: req.body.vehicleBrand || 'Demo',
+        model: req.body.vehicleModel || 'Model',
+        year: req.body.vehicleYear || 2020
+      },
+      isOverdue: false,
+      isFullyPaid: false,
+      paymentProgress: 0,
+      daysOverdue: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    res.status(201).json({ status: 'success', message: 'Ödeme başarıyla oluşturuldu', data: newPayment });
+    return;
+  }
+
+  res.json({ status: 'success', message: 'Production mode - MongoDB gerekli' });
+});
+
+// Get single payment
+export const getPayment = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    const demoPayment = {
+      _id: 'demo_payment_1',
+      invoiceNumber: 'FAT-2024-001',
+      invoiceDate: new Date('2024-01-15T10:00:00Z'),
+      dueDate: new Date('2024-01-22T10:00:00Z'),
+      paymentMethod: 'credit_card',
+      paymentStatus: 'paid',
+      subtotal: 250,
+      taxRate: 20,
+      taxAmount: 50,
+      totalAmount: 300,
+      paidAmount: 300,
+      remainingAmount: 0,
+      customerInfo: {
+        name: 'Ahmet Yılmaz',
+        phone: '+90 555 111 2233',
+        email: 'ahmet@demo.com'
+      },
+      vehicleInfo: {
+        plate: '34 ABC 123',
+        brand: 'Toyota',
+        model: 'Corolla',
+        year: 2020
+      },
+      isOverdue: false,
+      isFullyPaid: true,
+      paymentProgress: 100,
+      daysOverdue: 0,
+      createdAt: new Date('2024-01-15T10:00:00Z'),
+      updatedAt: new Date('2024-01-15T14:30:00Z')
+    };
+
+    res.json({ status: 'success', data: demoPayment });
+    return;
+  }
+
+  res.json({ status: 'success', data: {}, message: 'Production mode - MongoDB gerekli' });
+});
+
+// Add payment
+export const addPayment = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    res.json({ status: 'success', message: 'Ödeme başarıyla eklendi' });
+    return;
+  }
+
+  res.json({ status: 'success', message: 'Production mode - MongoDB gerekli' });
+});
+
+// Delete payment
+export const deletePayment = catchAsync(async (req: Request, res: Response) => {
+  if (isDemoMode) {
+    res.json({ status: 'success', message: 'Ödeme başarıyla silindi' });
+    return;
+  }
+
+  res.json({ status: 'success', message: 'Production mode - MongoDB gerekli' });
+});

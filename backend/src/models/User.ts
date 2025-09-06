@@ -15,9 +15,20 @@ export interface IUser extends Document {
   businessName?: string;
   businessType?: string;
   address?: string;
+  refreshTokens?: string[];
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  emailVerificationToken?: string;
+  emailVerified?: boolean;
+  lastLogin?: Date;
+  loginAttempts?: number;
+  lockUntil?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
+  isLocked(): boolean;
+  incLoginAttempts(): Promise<void>;
+  resetLoginAttempts(): Promise<void>;
 }
 
 const userSchema = new Schema<IUser>({
@@ -85,6 +96,36 @@ const userSchema = new Schema<IUser>({
   address: {
     type: String,
     trim: true
+  },
+  refreshTokens: [{
+    type: String,
+    select: false
+  }],
+  passwordResetToken: {
+    type: String,
+    select: false
+  },
+  passwordResetExpires: {
+    type: Date,
+    select: false
+  },
+  emailVerificationToken: {
+    type: String,
+    select: false
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  lastLogin: {
+    type: Date
+  },
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: {
+    type: Date
   }
 }, {
   timestamps: true,
@@ -97,8 +138,7 @@ userSchema.virtual('fullName').get(function() {
   return `${this.firstName} ${this.lastName}`;
 });
 
-// Indexes
-userSchema.index({ email: 1 });
+// Indexes (email already has unique: true, so no need for separate index)
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
 
@@ -115,6 +155,11 @@ userSchema.pre('save', async function(next) {
   }
 });
 
+// Virtual for account lock status
+userSchema.virtual('isLocked').get(function() {
+  return !!(this.lockUntil && this.lockUntil > new Date());
+});
+
 // Method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
   try {
@@ -122,6 +167,38 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
   } catch (error) {
     return false;
   }
+};
+
+// Method to check if account is locked
+userSchema.methods.isLocked = function(): boolean {
+  return !!(this.lockUntil && this.lockUntil > new Date());
+};
+
+// Method to increment login attempts
+userSchema.methods.incLoginAttempts = async function(): Promise<void> {
+  // If we have a previous lock that has expired, restart at 1
+  if (this.lockUntil && this.lockUntil < new Date()) {
+    return this.updateOne({
+      $unset: { lockUntil: 1 },
+      $set: { loginAttempts: 1 }
+    });
+  }
+  
+  const updates: any = { $inc: { loginAttempts: 1 } };
+  
+  // Lock account after 5 failed attempts for 2 hours
+  if (this.loginAttempts + 1 >= 5 && !this.isLocked()) {
+    updates.$set = { lockUntil: new Date(Date.now() + 2 * 60 * 60 * 1000) }; // 2 hours
+  }
+  
+  return this.updateOne(updates);
+};
+
+// Method to reset login attempts
+userSchema.methods.resetLoginAttempts = async function(): Promise<void> {
+  return this.updateOne({
+    $unset: { loginAttempts: 1, lockUntil: 1 }
+  });
 };
 
 export default mongoose.model<IUser>('User', userSchema);

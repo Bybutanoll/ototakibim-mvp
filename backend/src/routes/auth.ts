@@ -1,6 +1,18 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getCurrentUser, updateProfile, changePassword, completeOnboarding, getOnboardingStatus } from '../controllers/authController';
+import { 
+  register, 
+  login, 
+  logout,
+  refreshToken,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+  getCurrentUser, 
+  updateProfile, 
+  completeOnboarding, 
+  getOnboardingStatus 
+} from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
@@ -31,9 +43,26 @@ const changePasswordValidation = [
   body('newPassword').isLength({ min: 8 }).withMessage('Yeni şifre en az 8 karakter olmalıdır')
 ];
 
+const forgotPasswordValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Geçerli bir email adresi giriniz')
+];
+
+const resetPasswordValidation = [
+  body('token').notEmpty().withMessage('Token gereklidir'),
+  body('password').isLength({ min: 8 }).withMessage('Şifre en az 8 karakter olmalıdır')
+];
+
+const refreshTokenValidation = [
+  body('refreshToken').notEmpty().withMessage('Refresh token gereklidir')
+];
+
 // Routes
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
+router.post('/logout', logout);
+router.post('/refresh-token', refreshTokenValidation, refreshToken);
+router.post('/forgot-password', forgotPasswordValidation, forgotPassword);
+router.post('/reset-password', resetPasswordValidation, resetPassword);
 router.get('/me', authenticateToken, getCurrentUser);
 router.put('/profile', authenticateToken, updateProfileValidation, updateProfile);
 router.put('/change-password', authenticateToken, changePasswordValidation, changePassword);

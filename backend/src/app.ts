@@ -9,7 +9,7 @@ import dotenv from 'dotenv';
 import { connectDB } from './config/database';
 import authRoutes from './routes/auth';
 import vehicleRoutes from './routes/vehicles';
-import workOrderRoutes from './routes/workOrders';
+import workOrderRoutes from './routes/workOrder';
 import obdRoutes from './routes/obd';
 import blockchainRoutes from './routes/blockchain';
 import arvrRoutes from './routes/arvr';
@@ -21,6 +21,8 @@ import inventoryRoutes from './routes/inventory';
 import biRoutes from './routes/bi';
 import serviceRoutes from './routes/services';
 import appointmentRoutes from './routes/appointments';
+import paymentRoutes from './routes/payments';
+import reportRoutes from './routes/reports';
 import {
   securityHeaders,
   corsOptions,
@@ -35,6 +37,12 @@ import {
   authRateLimit,
   uploadRateLimit
 } from './middleware/security';
+import { 
+  globalErrorHandler, 
+  notFound, 
+  handleUnhandledRejection, 
+  handleUncaughtException 
+} from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -118,24 +126,13 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/bi', biRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/reports', reportRoutes);
 
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    status: 'error',
-    message: `Route ${req.originalUrl} bulunamadı`
-  });
-});
+app.use('*', notFound);
 
 // Global error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('❌ Hata:', err);
-  
-  res.status(err.status || 500).json({
-    status: 'error',
-    message: err.message || 'Sunucu hatası',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
+app.use(globalErrorHandler);
 
 export default app;

@@ -4,6 +4,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import Vehicle, { IVehicle } from '../models/Vehicle';
+import Customer from '../models/Customer';
+import { CustomError, catchAsync } from '../middleware/errorHandler';
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
@@ -38,27 +40,115 @@ export const upload = multer({
 });
 
 // Tüm araçları getir (kullanıcının kendi araçları)
-export const getVehicles = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user.id;
+export const getVehicles = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const { page = 1, limit = 10, search } = req.query;
+  
+  // Demo mode - return demo vehicles
+  if (process.env.DEMO_MODE === 'true') {
+    const demoVehicles = [
+      {
+        _id: 'demo_vehicle_1',
+        plate: '34 ABC 123',
+        brand: 'Toyota',
+        vehicleModel: 'Corolla',
+        year: 2020,
+        vin: '1HGBH41JXMN109186',
+        engineSize: '1.6L',
+        fuelType: 'gasoline',
+        transmission: 'automatic',
+        mileage: 45000,
+        color: 'Beyaz',
+        owner: userId,
+        customer: 'demo_customer_1',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        _id: 'demo_vehicle_2',
+        plate: '06 XYZ 789',
+        brand: 'Volkswagen',
+        vehicleModel: 'Golf',
+        year: 2019,
+        vin: '1HGBH41JXMN109187',
+        engineSize: '1.4L',
+        fuelType: 'gasoline',
+        transmission: 'manual',
+        mileage: 62000,
+        color: 'Siyah',
+        owner: userId,
+        customer: 'demo_customer_2',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        _id: 'demo_vehicle_3',
+        plate: '35 DEF 456',
+        brand: 'Ford',
+        vehicleModel: 'Focus',
+        year: 2021,
+        vin: '1HGBH41JXMN109188',
+        engineSize: '1.5L',
+        fuelType: 'diesel',
+        transmission: 'automatic',
+        mileage: 28000,
+        color: 'Mavi',
+        owner: userId,
+        customer: 'demo_customer_1',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+      ];
+
+      return res.json({
+        status: 'success',
+        data: demoVehicles,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 3,
+          pages: 1
+        }
+      });
+    }
     
-    const vehicles = await Vehicle.find({ 
-      owner: userId, 
-      isActive: true 
-    }).sort({ createdAt: -1 });
+    let query: any = { owner: userId, isActive: true };
+
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { plate: { $regex: search, $options: 'i' } },
+        { brand: { $regex: search, $options: 'i' } },
+        { vehicleModel: { $regex: search, $options: 'i' } },
+        { vin: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    
+    const [vehicles, total] = await Promise.all([
+      Vehicle.find(query)
+        .populate('customer', 'firstName lastName phone email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
+      Vehicle.countDocuments(query)
+    ]);
 
     res.json({
       status: 'success',
-      data: vehicles
+      data: vehicles,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit))
+      }
     });
-  } catch (error) {
-    console.error('Get vehicles error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Araçlar getirilirken hata oluştu'
-    });
-  }
-};
+});
 
 // Tek araç getir
 export const getVehicle = async (req: Request, res: Response) => {
@@ -93,56 +183,61 @@ export const getVehicle = async (req: Request, res: Response) => {
 };
 
 // Yeni araç oluştur
-export const createVehicle = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user.id;
-    
-    // Handle file uploads
-    const photos: string[] = [];
-    if (req.files && Array.isArray(req.files)) {
-      photos.push(...req.files.map((file: Express.Multer.File) => 
-        `/uploads/vehicles/${file.filename}`
-      ));
-    }
-
-    const vehicleData = {
-      ...req.body,
-      owner: userId,
-      photos: photos,
-      mileage: parseInt(req.body.mileage) || 0,
-      year: parseInt(req.body.year) || new Date().getFullYear()
-    };
-
-    // Plaka benzersizlik kontrolü
-    const existingVehicle = await Vehicle.findOne({
-      plate: vehicleData.plate.toUpperCase(),
-      owner: userId,
-      isActive: true
-    });
-
-    if (existingVehicle) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Bu plaka zaten kayıtlı'
-      });
-    }
-
-    const vehicle = new Vehicle(vehicleData);
-    await vehicle.save();
-
-    res.status(201).json({
-      status: 'success',
-      message: 'Araç başarıyla oluşturuldu',
-      data: vehicle
-    });
-  } catch (error) {
-    console.error('Create vehicle error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Araç oluşturulurken hata oluştu'
-    });
+export const createVehicle = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  
+  // Handle file uploads
+  const photos: string[] = [];
+  if (req.files && Array.isArray(req.files)) {
+    photos.push(...req.files.map((file: Express.Multer.File) => 
+      `/uploads/vehicles/${file.filename}`
+    ));
   }
-};
+
+  // Customer validation
+  const customer = await Customer.findOne({
+    _id: req.body.customer,
+    owner: userId,
+    isActive: true
+  });
+
+  if (!customer) {
+    throw new CustomError('Geçersiz müşteri', 400);
+  }
+
+  const vehicleData = {
+    ...req.body,
+    owner: userId,
+    customer: req.body.customer,
+    photos: photos,
+    mileage: parseInt(req.body.mileage) || 0,
+    year: parseInt(req.body.year) || new Date().getFullYear(),
+    plate: req.body.plate.toUpperCase()
+  };
+
+  // Plaka benzersizlik kontrolü
+  const existingVehicle = await Vehicle.findOne({
+    plate: vehicleData.plate,
+    owner: userId,
+    isActive: true
+  });
+
+  if (existingVehicle) {
+    throw new CustomError('Bu plaka zaten kayıtlı', 400);
+  }
+
+  const vehicle = new Vehicle(vehicleData);
+  await vehicle.save();
+
+  // Populate customer data
+  await vehicle.populate('customer', 'firstName lastName phone email');
+
+  res.status(201).json({
+    status: 'success',
+    message: 'Araç başarıyla oluşturuldu',
+    data: vehicle
+  });
+});
 
 // Araç güncelle
 export const updateVehicle = async (req: Request, res: Response) => {

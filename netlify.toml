@@ -7,15 +7,9 @@
   NODE_VERSION = "18"
   NEXT_PUBLIC_API_URL = "https://ototakibim-mvp.onrender.com"
 
-# Functions'ı tamamen devre dışı bırak
-[functions]
-  directory = ""
-
-# Next.js için gerekli redirects
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Netlify Next.js Plugin - SSR, ISR ve API routes için gerekli
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 # Headers for better performance
 [[headers]]

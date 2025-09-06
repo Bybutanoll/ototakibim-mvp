@@ -34,6 +34,11 @@ import {
   RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
+import LogoAnimation from '@/components/LogoAnimation';
+import ParticleSystem from '@/components/ParticleSystem';
+import BrandButton, { CTAButton } from '@/components/BrandButton';
+import BrandCard, { FeatureCard, StatsCard } from '@/components/BrandCard';
+import '@/styles/brand-system.css';
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
@@ -166,7 +171,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
-      {/* Hero Section - Ultra Premium */}
+      {/* Particle System */}
+      <ParticleSystem particleCount={30} className="opacity-30" />
+      
+      {/* Hero Section - Logo Animation */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Advanced Background Effects */}
         <div className="absolute inset-0">
@@ -174,6 +182,11 @@ export default function Home() {
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
           }}></div>
+        </div>
+        
+        {/* Logo Animation */}
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
+          <LogoAnimation size="large" showParticles={true} />
         </div>
         
         {/* Floating Particles */}
@@ -250,25 +263,17 @@ export default function Home() {
             className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
           >
             <Link href="/register">
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)" }}
-                whileTap={{ scale: 0.95 }}
-                className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 flex items-center space-x-3"
-              >
+              <CTAButton>
                 <Rocket className="w-5 h-5" />
-                <span>Ücretsiz Başla</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
+                Ücretsiz Başla
+                <ArrowRight className="w-5 h-5" />
+              </CTAButton>
             </Link>
             
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="group flex items-center space-x-3 px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold rounded-xl hover:bg-white/20 transition-all duration-300"
-            >
+            <BrandButton variant="secondary">
               <Play className="w-5 h-5" />
-              <span>Demo İzle</span>
-            </motion.button>
+              Demo İzle
+            </BrandButton>
           </motion.div>
 
           {/* Trust Indicators */}
@@ -335,15 +340,13 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="text-center"
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl mb-4">
-                  <stat.icon className="w-8 h-8 text-white" />
-                </div>
-                <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-white/70">{stat.label}</div>
+                <StatsCard
+                  title={stat.label}
+                  value={stat.number}
+                  variant="gradient"
+                  className="text-center"
+                />
               </motion.div>
             ))}
           </motion.div>
@@ -377,18 +380,14 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                whileHover={{ y: -10, scale: 1.02 }}
-                className="group relative p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 transition-all duration-300"
               >
-                <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <feature.icon className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-4">
-                  {feature.title}
-                </h3>
-                <p className="text-white/70 leading-relaxed">
-                  {feature.description}
-                </p>
+                <FeatureCard
+                  title={feature.title}
+                  description={feature.description}
+                  icon={<feature.icon className="w-6 h-6" />}
+                  variant="glass"
+                  className="h-full"
+                />
               </motion.div>
             ))}
           </div>

@@ -37,6 +37,13 @@ export interface IVehicle extends Document {
   fullName: string; // Marka + Model + Yıl
 }
 
+// Static methods interface
+export interface IVehicleModel extends mongoose.Model<IVehicle> {
+  findByOwner(ownerId: string): mongoose.Query<IVehicle[], IVehicle>;
+  findByCustomer(customerId: string): mongoose.Query<IVehicle[], IVehicle>;
+  searchByOwner(ownerId: string, searchTerm: string): mongoose.Query<IVehicle[], IVehicle>;
+}
+
 const vehicleSchema = new Schema<IVehicle>({
   owner: {
     type: Schema.Types.ObjectId,
@@ -228,4 +235,4 @@ vehicleSchema.statics.searchByOwner = function(ownerId: string, searchTerm: stri
   .sort({ createdAt: -1 });
 };
 
-export default mongoose.model<IVehicle>('Vehicle', vehicleSchema);
+export default mongoose.model<IVehicle, IVehicleModel>('Vehicle', vehicleSchema);

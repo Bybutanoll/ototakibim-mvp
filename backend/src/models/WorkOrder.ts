@@ -127,6 +127,13 @@ export interface IWorkOrder extends Document {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Methods
+  initializeWorkflow(type: string): this;
+  changeStatus(newStatus: string, changedBy: string, reason?: string): this;
+  completeStep(stepNumber: number, completedBy: string, actualTime?: number, notes?: string): this;
+  canTransitionTo(newStatus: string): boolean;
+  setWorkflowTemplate(type: string): this;
 }
 
 const workOrderSchema = new Schema<IWorkOrder>({

@@ -134,6 +134,13 @@ export interface IAppointment extends Document {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Methods
+  confirm(confirmedBy: string, method: string, notes?: string): this;
+  cancel(cancelledBy: string, reason: string, notes?: string): this;
+  reschedule(newDate: Date, newStartTime: Date, newEndTime: Date, rescheduledBy: string, reason: string): this;
+  addReminder(type: string, scheduledAt: Date, message?: string): this;
+  markNoShow(markedBy: string, notes?: string): this;
 }
 
 const appointmentSchema = new Schema<IAppointment>({

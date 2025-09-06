@@ -28,13 +28,13 @@ export interface TokenPair {
 export const generateAccessToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>): string => {
   return jwt.sign(
     payload,
-    JWT_SECRET as string,
+    JWT_SECRET,
     { 
       expiresIn: JWT_EXPIRE,
       issuer: 'ototakibim-api',
       audience: 'ototakibim-client'
     }
-  );
+  ) as string;
 };
 
 /**
@@ -43,13 +43,13 @@ export const generateAccessToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>):
 export const generateRefreshToken = (userId: string): string => {
   return jwt.sign(
     { id: userId, type: 'refresh' },
-    JWT_REFRESH_SECRET as string,
+    JWT_REFRESH_SECRET,
     { 
       expiresIn: JWT_REFRESH_EXPIRE,
       issuer: 'ototakibim-api',
       audience: 'ototakibim-client'
     }
-  );
+  ) as string;
 };
 
 /**

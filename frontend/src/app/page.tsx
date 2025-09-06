@@ -37,10 +37,11 @@ import Link from 'next/link';
 import LogoAnimation from '@/components/LogoAnimation';
 import AdvancedParticleSystem, { ProgressiveParticleSystem } from '@/components/AdvancedParticleSystem';
 import LogoLoadingSequence from '@/components/LogoLoadingSequence';
-import BrandButton, { CTAButton } from '@/components/BrandButton';
-import BrandCard, { FeatureCard, StatsCard } from '@/components/BrandCard';
+import PremiumButton, { FAB } from '@/components/PremiumButton';
+import PremiumCard, { FeatureCard, StatsCard, PricingCard } from '@/components/PremiumCard';
 import { logoAnalytics } from '@/utils/analytics';
 import '@/styles/brand-system.css';
+import '@/styles/premium-design-system.css';
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
@@ -301,25 +302,33 @@ export default function Home() {
             araçlarınızı profesyonelce yönetin.
           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
-          >
-            <Link href="/register">
-              <CTAButton>
-                <Rocket className="w-5 h-5" />
-                Ücretsiz Başla
-                <ArrowRight className="w-5 h-5" />
-              </CTAButton>
-            </Link>
-            
-            <BrandButton variant="secondary">
-              <Play className="w-5 h-5" />
-              Demo İzle
-            </BrandButton>
-          </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.6 }}
+                  className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
+                >
+                  <Link href="/register">
+                    <PremiumButton
+                      variant="primary"
+                      size="lg"
+                      gradient
+                      glow
+                      leftIcon={<Rocket className="w-5 h-5" />}
+                      rightIcon={<ArrowRight className="w-5 h-5" />}
+                    >
+                      Ücretsiz Başla
+                    </PremiumButton>
+                  </Link>
+
+                  <PremiumButton
+                    variant="outline"
+                    size="lg"
+                    leftIcon={<Play className="w-5 h-5" />}
+                  >
+                    Demo İzle
+                  </PremiumButton>
+                </motion.div>
 
           {/* Trust Indicators */}
           <motion.div
@@ -417,25 +426,25 @@ export default function Home() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                viewport={{ once: true }}
-              >
-                <FeatureCard
-                  title={feature.title}
-                  description={feature.description}
-                  icon={<feature.icon className="w-6 h-6" />}
-                  variant="glass"
-                  className="h-full"
-                />
-              </motion.div>
-            ))}
-          </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {features.map((feature, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                    >
+                      <FeatureCard
+                        icon={feature.icon}
+                        title={feature.title}
+                        description={feature.description}
+                        gradient={index % 2 === 0}
+                        className="h-full"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
         </div>
       </section>
 
@@ -667,6 +676,16 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Action Button */}
+      <FAB
+        icon={<Rocket className="w-6 h-6" />}
+        aria-label="Hızlı Başla"
+        onClick={() => {
+          logoAnalytics.trackLogoClick('quick_start');
+          window.location.href = '/register';
+        }}
+      />
     </div>
   );
 }

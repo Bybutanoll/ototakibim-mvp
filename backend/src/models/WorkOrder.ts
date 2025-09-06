@@ -631,12 +631,12 @@ workOrderSchema.methods.initializeWorkflow = function(type: string) {
     ]
   };
 
-  const template = workflowTemplates[type] || workflowTemplates.repair;
+  const template = workflowTemplates[type as keyof typeof workflowTemplates] || workflowTemplates.repair;
   
   this.workflow = {
     currentStep: 1,
     totalSteps: template.length,
-    steps: template.map(step => ({
+    steps: template.map((step: any) => ({
       ...step,
       status: 'pending' as const
     }))
@@ -695,7 +695,7 @@ workOrderSchema.methods.changeStatus = function(newStatus: string, changedBy: st
 
 // Workflow adımını tamamla
 workOrderSchema.methods.completeStep = function(stepNumber: number, completedBy: string, actualTime?: number, notes?: string) {
-  const step = this.workflow.steps.find(s => s.stepNumber === stepNumber);
+  const step = this.workflow.steps.find((s: any) => s.stepNumber === stepNumber);
   if (!step) {
     throw new Error(`Adım bulunamadı: ${stepNumber}`);
   }
@@ -709,7 +709,7 @@ workOrderSchema.methods.completeStep = function(stepNumber: number, completedBy:
   // Sonraki adıma geç
   if (stepNumber < this.workflow.totalSteps) {
     this.workflow.currentStep = stepNumber + 1;
-    const nextStep = this.workflow.steps.find(s => s.stepNumber === stepNumber + 1);
+    const nextStep = this.workflow.steps.find((s: any) => s.stepNumber === stepNumber + 1);
     if (nextStep) {
       nextStep.status = 'in-progress';
     }

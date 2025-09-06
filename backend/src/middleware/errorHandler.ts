@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 
 export interface AppError extends Error {
   statusCode?: number;
+  status?: string;
+  code?: number;
   isOperational?: boolean;
 }
 

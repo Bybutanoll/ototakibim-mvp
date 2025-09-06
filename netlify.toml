@@ -1,10 +1,15 @@
 [build]
+  base = "frontend"
   command = "npm install && npm run build"
-  publish = ".next"
+  publish = "frontend/.next"
 
 [build.environment]
   NODE_VERSION = "18"
   NEXT_PUBLIC_API_URL = "https://ototakibim-mvp.onrender.com"
+
+# Functions'ı tamamen devre dışı bırak
+[functions]
+  directory = ""
 
 # Next.js için gerekli redirects
 [[redirects]]

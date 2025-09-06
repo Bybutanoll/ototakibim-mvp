@@ -130,7 +130,7 @@ export interface IWorkOrder extends Document {
   
   // Methods
   initializeWorkflow(type: string): this;
-  changeStatus(newStatus: string, changedBy: string, reason?: string): this;
+  changeStatus(newStatus: string, changedBy: string, reason?: string, notes?: string): this;
   completeStep(stepNumber: number, completedBy: string, actualTime?: number, notes?: string): this;
   canTransitionTo(newStatus: string): boolean;
   setWorkflowTemplate(type: string): this;
@@ -735,7 +735,7 @@ workOrderSchema.methods.initializeWorkflow = function(type: string) {
 };
 
 // Change status
-workOrderSchema.methods.changeStatus = function(newStatus: string, changedBy: string, reason?: string) {
+workOrderSchema.methods.changeStatus = function(newStatus: string, changedBy: string, reason?: string, notes?: string) {
   if (!this.canTransitionTo(newStatus)) {
     throw new Error(`Geçersiz durum geçişi: ${this.status} -> ${newStatus}`);
   }
@@ -750,7 +750,8 @@ workOrderSchema.methods.changeStatus = function(newStatus: string, changedBy: st
     toStatus: newStatus,
     changedBy: changedBy,
     changedAt: new Date(),
-    reason: reason
+    reason: reason,
+    notes: notes
   });
 
   return this;

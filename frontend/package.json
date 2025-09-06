@@ -10,7 +10,6 @@
     "dev:fast": "next dev --turbo",
     "dev:port": "next dev -p 3000",
     "export": "next build && next export",
-    "analyze": "cross-env ANALYZE=true npm run build",
     "build:prod": "cross-env NODE_ENV=production npm run build",
     "type-check": "tsc --noEmit"
   },
@@ -44,7 +43,6 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@netlify/plugin-nextjs": "^5.13.0",
-    "@next/bundle-analyzer": "^15.5.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

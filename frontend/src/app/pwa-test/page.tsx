@@ -158,7 +158,7 @@ const PWATestPage = () => {
               {isOnline ? (
                 <WifiIcon className="h-8 w-8 text-green-600" />
               ) : (
-                <WifiSlashIcon className="h-8 w-8 text-red-600" />
+                <WifiIcon className="h-8 w-8 text-red-600" />
               )}
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mt-4">
@@ -228,7 +228,7 @@ const PWATestPage = () => {
             title="Çevrimdışı Desteği"
             description="İnternet olmadan çalışabilme"
             status={testResults.offline}
-            icon={WifiSlashIcon}
+            icon={WifiIcon}
           />
 
           <TestCard

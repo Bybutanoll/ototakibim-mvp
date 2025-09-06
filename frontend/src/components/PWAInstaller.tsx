@@ -143,7 +143,7 @@ const PWAInstaller = () => {
             <div className="max-w-7xl mx-auto px-4 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <WifiSlashIcon className="h-6 w-6" />
+                  <WifiIcon className="h-6 w-6" />
                   <div>
                     <p className="font-semibold">Çevrimdışı Mod</p>
                     <p className="text-sm opacity-90">
@@ -177,7 +177,7 @@ const PWAInstaller = () => {
           {isOnline ? (
             <WifiIcon className="h-5 w-5" />
           ) : (
-            <WifiSlashIcon className="h-5 w-5" />
+            <WifiIcon className="h-5 w-5" />
           )}
         </motion.div>
       </div>

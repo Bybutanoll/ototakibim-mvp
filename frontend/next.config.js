@@ -1,8 +1,3 @@
-// Bundle analyzer - only enable in development or when explicitly requested
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.NODE_ENV === 'development' || process.env.ANALYZE === 'true',
-});
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -13,7 +8,6 @@ const nextConfig = {
   },
   // Performance optimizations
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@heroicons/react'],
   },
   // Bundle optimization
@@ -70,4 +64,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withBundleAnalyzer(nextConfig);
+module.exports = nextConfig;

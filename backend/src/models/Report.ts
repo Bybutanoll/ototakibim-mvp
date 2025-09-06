@@ -450,7 +450,7 @@ reportSchema.index({ owner: 1, isActive: 1 });
 reportSchema.index({ reportType: 1, status: 1 });
 reportSchema.index({ 'dateRange.startDate': 1, 'dateRange.endDate': 1 });
 reportSchema.index({ 'schedule.nextRun': 1 });
-reportSchema.index({ 'sharing.shareToken': 1 });
+// shareToken already has unique: true, no need for separate index
 
 // Text search index
 reportSchema.index({

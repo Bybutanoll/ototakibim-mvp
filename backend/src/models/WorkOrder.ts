@@ -537,10 +537,8 @@ const workOrderSchema = new Schema<IWorkOrder>({
 });
 
 // Indexes
-workOrderSchema.index({ owner: 1, isActive: 1 });
-workOrderSchema.index({ customer: 1, status: 1 });
-workOrderSchema.index({ vehicle: 1, status: 1 });
-workOrderSchema.index({ assignedTechnician: 1, status: 1 });
+// owner, customer, vehicle, assignedTechnician already have index: true, no need for separate indexes
+workOrderSchema.index({ isActive: 1 });
 workOrderSchema.index({ scheduledDate: 1, status: 1 });
 workOrderSchema.index({ status: 1, priority: 1 });
 workOrderSchema.index({ createdAt: 1 });

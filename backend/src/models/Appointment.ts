@@ -529,10 +529,8 @@ const appointmentSchema = new Schema<IAppointment>({
 });
 
 // Indexes
-appointmentSchema.index({ owner: 1, isActive: 1 });
-appointmentSchema.index({ customer: 1, status: 1 });
-appointmentSchema.index({ vehicle: 1, status: 1 });
-appointmentSchema.index({ assignedTechnician: 1, status: 1 });
+// owner, customer, vehicle, assignedTechnician already have index: true, no need for separate indexes
+appointmentSchema.index({ isActive: 1 });
 appointmentSchema.index({ scheduledDate: 1, startTime: 1 });
 appointmentSchema.index({ status: 1, priority: 1 });
 appointmentSchema.index({ 'customerInfo.phone': 1 });

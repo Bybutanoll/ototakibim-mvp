@@ -3,9 +3,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const JWT_SECRET = Buffer.from(process.env.JWT_SECRET || 'production_jwt_secret_key_2024');
+const JWT_SECRET = process.env.JWT_SECRET || 'production_jwt_secret_key_2024';
 const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
-const JWT_REFRESH_SECRET = Buffer.from(process.env.JWT_REFRESH_SECRET || 'production_refresh_secret_key_2024');
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'production_refresh_secret_key_2024';
 const JWT_REFRESH_EXPIRE = process.env.JWT_REFRESH_EXPIRE || '30d';
 
 export interface TokenPayload {
@@ -28,13 +28,13 @@ export interface TokenPair {
 export const generateAccessToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>): string => {
   return jwt.sign(
     payload,
-    JWT_SECRET,
+    JWT_SECRET as any,
     { 
       expiresIn: JWT_EXPIRE,
       issuer: 'ototakibim-api',
       audience: 'ototakibim-client'
     }
-  );
+  ) as string;
 };
 
 /**
@@ -43,13 +43,13 @@ export const generateAccessToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>):
 export const generateRefreshToken = (userId: string): string => {
   return jwt.sign(
     { id: userId, type: 'refresh' },
-    JWT_REFRESH_SECRET,
+    JWT_REFRESH_SECRET as any,
     { 
       expiresIn: JWT_REFRESH_EXPIRE,
       issuer: 'ototakibim-api',
       audience: 'ototakibim-client'
     }
-  );
+  ) as string;
 };
 
 /**

@@ -642,13 +642,13 @@ paymentSchema.virtual('paymentProgress').get(function() {
   return (this.paidAmount / this.totalAmount) * 100;
 });
 
-paymentSchema.virtual('isOverdue').get(function() {
+paymentSchema.virtual('isOverdue').get(function(this: any) {
   if (this.status === 'paid' || this.status === 'cancelled') return false;
   if (!this.dueDate) return false;
   return new Date() > this.dueDate;
 });
 
-paymentSchema.virtual('daysOverdue').get(function() {
+paymentSchema.virtual('daysOverdue').get(function(this: any) {
   if (!this.isOverdue) return 0;
   const today = new Date();
   const diffTime = today.getTime() - this.dueDate.getTime();

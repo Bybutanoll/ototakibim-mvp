@@ -28,7 +28,7 @@ export interface TokenPair {
 export const generateAccessToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>): string => {
   return jwt.sign(
     payload,
-    JWT_SECRET,
+    JWT_SECRET as string,
     { 
       expiresIn: JWT_EXPIRE,
       issuer: 'ototakibim-api',
@@ -43,7 +43,7 @@ export const generateAccessToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>):
 export const generateRefreshToken = (userId: string): string => {
   return jwt.sign(
     { id: userId, type: 'refresh' },
-    JWT_REFRESH_SECRET,
+    JWT_REFRESH_SECRET as string,
     { 
       expiresIn: JWT_REFRESH_EXPIRE,
       issuer: 'ototakibim-api',

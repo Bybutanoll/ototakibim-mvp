@@ -141,7 +141,7 @@ export const customerController = {
     }
 
     // Get customer's vehicles
-    const vehicles = await Vehicle.findByCustomer(customer._id.toString());
+    const vehicles = await Vehicle.findByCustomer((customer._id as any).toString());
 
     res.json({
       status: 'success',

@@ -722,4 +722,60 @@ workOrderSchema.methods.completeStep = function(stepNumber: number, completedBy:
   return this;
 };
 
+// Initialize workflow
+workOrderSchema.methods.initializeWorkflow = function(type: string) {
+  return this.setWorkflowTemplate(type);
+};
+
+// Change status
+workOrderSchema.methods.changeStatus = function(newStatus: string, changedBy: string, reason?: string) {
+  if (!this.canTransitionTo(newStatus)) {
+    throw new Error(`Geçersiz durum geçişi: ${this.status} -> ${newStatus}`);
+  }
+
+  const oldStatus = this.status;
+  this.status = newStatus;
+  this.updatedAt = new Date();
+
+  // Status history'ye ekle
+  this.statusHistory.push({
+    fromStatus: oldStatus,
+    toStatus: newStatus,
+    changedBy: changedBy,
+    changedAt: new Date(),
+    reason: reason
+  });
+
+  return this;
+};
+
+// Complete step
+workOrderSchema.methods.completeStep = function(stepNumber: number, completedBy: string, actualTime?: number, notes?: string) {
+  const step = this.workflow.steps.find((s: any) => s.stepNumber === stepNumber);
+  if (!step) {
+    throw new Error(`Adım bulunamadı: ${stepNumber}`);
+  }
+
+  step.status = 'completed';
+  step.completedAt = new Date();
+  step.completedBy = completedBy;
+  step.actualTime = actualTime || step.estimatedTime;
+  step.notes = notes;
+
+  // Sonraki adıma geç
+  if (stepNumber < this.workflow.totalSteps) {
+    this.workflow.currentStep = stepNumber + 1;
+    const nextStep = this.workflow.steps.find((s: any) => s.stepNumber === stepNumber + 1);
+    if (nextStep) {
+      nextStep.status = 'in-progress';
+    }
+  } else {
+    // Tüm adımlar tamamlandı
+    this.workflow.currentStep = this.workflow.totalSteps;
+    this.changeStatus('quality-check', completedBy, 'Tüm adımlar tamamlandı');
+  }
+
+  return this;
+};
+
 export default mongoose.model<IWorkOrder>('WorkOrder', workOrderSchema);

@@ -733,4 +733,46 @@ appointmentSchema.methods.markNoShow = function(markedBy: string, notes?: string
   return this;
 };
 
+// Confirm appointment
+appointmentSchema.methods.confirm = function(confirmedBy: string, method: string, notes?: string) {
+  this.status = 'confirmed';
+  this.confirmation = {
+    confirmedAt: new Date(),
+    confirmedBy: confirmedBy,
+    method: method,
+    notes: notes
+  };
+  
+  this.statusHistory.push({
+    fromStatus: this.status,
+    toStatus: 'confirmed',
+    changedBy: confirmedBy,
+    reason: 'Randevu onaylandı',
+    notes: notes
+  });
+  
+  return this;
+};
+
+// Cancel appointment
+appointmentSchema.methods.cancel = function(cancelledBy: string, reason: string, notes?: string) {
+  this.status = 'cancelled';
+  this.cancellation = {
+    cancelledAt: new Date(),
+    cancelledBy: cancelledBy,
+    reason: reason,
+    notes: notes
+  };
+  
+  this.statusHistory.push({
+    fromStatus: this.status,
+    toStatus: 'cancelled',
+    changedBy: cancelledBy,
+    reason: reason,
+    notes: notes
+  });
+  
+  return this;
+};
+
 export default mongoose.model<IAppointment>('Appointment', appointmentSchema);

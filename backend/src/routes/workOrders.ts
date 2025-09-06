@@ -3,10 +3,9 @@ import { body } from 'express-validator';
 import { 
   createWorkOrder, 
   getWorkOrders, 
-  getWorkOrderById, 
+  getWorkOrder, 
   updateWorkOrder, 
-  deleteWorkOrder,
-  updateWorkOrderStatus 
+  deleteWorkOrder 
 } from '../controllers/workOrderController';
 import { authenticateToken } from '../middleware/auth';
 

@@ -8,6 +8,14 @@ const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d'; // Reduced from 30d to 7d for
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your_super_secret_refresh_key_here_change_in_production';
 const JWT_REFRESH_EXPIRE = process.env.JWT_REFRESH_EXPIRE || '30d';
 
+// Ensure JWT secrets are strings
+if (!JWT_SECRET || JWT_SECRET === 'your_super_secret_jwt_key_here_change_in_production') {
+  throw new Error('JWT_SECRET must be set in environment variables');
+}
+if (!JWT_REFRESH_SECRET || JWT_REFRESH_SECRET === 'your_super_secret_refresh_key_here_change_in_production') {
+  throw new Error('JWT_REFRESH_SECRET must be set in environment variables');
+}
+
 export interface TokenPayload {
   id: string;
   email: string;

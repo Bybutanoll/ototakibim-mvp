@@ -13,7 +13,7 @@ import workOrderRoutes from './routes/workOrder';
 import obdRoutes from './routes/obd';
 import blockchainRoutes from './routes/blockchain';
 import arvrRoutes from './routes/arvr';
-import paymentRoutes from './routes/payment';
+import paymentRoutes from './routes/payments';
 import aiRoutes from './routes/ai';
 import customerRoutes from './routes/customers';
 import maintenanceRoutes from './routes/maintenance';
@@ -21,7 +21,6 @@ import inventoryRoutes from './routes/inventory';
 import biRoutes from './routes/bi';
 import serviceRoutes from './routes/services';
 import appointmentRoutes from './routes/appointments';
-import paymentRoutes from './routes/payments';
 import reportRoutes from './routes/reports';
 import {
   securityHeaders,

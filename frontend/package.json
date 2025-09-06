@@ -9,7 +9,10 @@
     "lint": "eslint",
     "dev:fast": "next dev --turbo",
     "dev:port": "next dev -p 3000",
-    "export": "next build && next export"
+    "export": "next build && next export",
+    "analyze": "cross-env ANALYZE=true npm run build",
+    "build:prod": "cross-env NODE_ENV=production npm run build",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
@@ -17,6 +20,8 @@
     "@hookform/resolvers": "^5.2.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
+    "@tanstack/react-query": "^5.87.1",
+    "@tanstack/react-query-devtools": "^5.87.1",
     "@types/three": "^0.180.0",
     "axios": "^1.11.0",
     "clsx": "^2.1.1",
@@ -33,16 +38,19 @@
     "react-loading-skeleton": "^3.5.0",
     "tailwind-merge": "^3.3.1",
     "three": "^0.180.0",
-    "yup": "^1.7.0"
+    "yup": "^1.7.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@netlify/plugin-nextjs": "^5.13.0",
+    "@next/bundle-analyzer": "^15.5.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",
     "canvas": "^3.2.0",
+    "cross-env": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "postcss": "^8.4.49",

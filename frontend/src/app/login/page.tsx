@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Mail, Lock, Car, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { LogoLogin } from '@/components/ui/Logo';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -121,9 +122,7 @@ export default function LoginPage() {
           className="text-center"
         >
           <div className="flex justify-center mb-6">
-            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl">
-              <Car className="h-10 w-10 text-white" />
-            </div>
+            <LogoLogin size={120} />
           </div>
           <h2 className="text-3xl font-bold text-slate-900 mb-2">
             Hesabınıza Giriş Yapın

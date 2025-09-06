@@ -4,6 +4,9 @@ import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AppointmentProvider } from '@/contexts/AppointmentContext';
 import { PaymentProvider } from '@/contexts/PaymentContext';
+import { QueryProvider } from '@/providers/QueryProvider';
+import PWAInstaller from '@/components/PWAInstaller';
+import MobileLayout from '@/components/MobileLayout';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -74,18 +77,28 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        <link rel="manifest" href="/site.webmanifest" />
-        <meta name="theme-color" content="#0F172A" />
-        <meta name="msapplication-TileColor" content="#0F172A" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#3b82f6" />
+        <meta name="msapplication-TileColor" content="#3b82f6" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="OtoTakibim" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="application-name" content="OtoTakibim" />
       </head>
               <body className={inter.className}>
-          <AuthProvider>
-            <AppointmentProvider>
-              <PaymentProvider>
-                {children}
-              </PaymentProvider>
-            </AppointmentProvider>
-          </AuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <AppointmentProvider>
+                <PaymentProvider>
+                  <MobileLayout>
+                    {children}
+                  </MobileLayout>
+                  <PWAInstaller />
+                </PaymentProvider>
+              </AppointmentProvider>
+            </AuthProvider>
+          </QueryProvider>
         </body>
     </html>
   );

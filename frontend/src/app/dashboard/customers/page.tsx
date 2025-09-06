@@ -1,490 +1,732 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { motion } from 'framer-motion';
 import { 
-  Users, 
-  Plus, 
-  Search, 
-  Filter, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Phone, 
-  Mail, 
-  MapPin,
-  Car,
-  Calendar,
-  DollarSign,
-  Star,
-  ArrowLeft,
-  UserPlus,
-  Building,
-  CreditCard
-} from 'lucide-react';
+  PlusIcon, 
+  MagnifyingGlassIcon, 
+  UserIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  MapPinIcon,
+  PencilIcon,
+  TrashIcon,
+  EyeIcon
+} from '@heroicons/react/24/outline';
+import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 interface Customer {
   _id: string;
   firstName: string;
   lastName: string;
-  email: string;
   phone: string;
-  company?: string;
+  email?: string;
+  address?: {
+    street: string;
+    city: string;
+    district: string;
+    postalCode: string;
+  };
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CustomerFormData {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
   address: {
     street: string;
     city: string;
-    state: string;
-    zipCode: string;
-    country: string;
+    district: string;
+    postalCode: string;
   };
-  vehicles: Array<{
-    _id: string;
-    plate: string;
-    brand: string;
-    model: string;
-    year: number;
-  }>;
-  totalSpent: number;
-  lastVisit: Date;
-  status: 'active' | 'inactive' | 'vip' | 'new';
-  loyaltyPoints: number;
   notes: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
-const statusOptions = [
-  { value: 'active', label: 'Aktif', color: 'bg-green-100 text-green-800' },
-  { value: 'inactive', label: 'Pasif', color: 'bg-gray-100 text-gray-800' },
-  { value: 'vip', label: 'VIP', color: 'bg-purple-100 text-purple-800' },
-  { value: 'new', label: 'Yeni', color: 'bg-blue-100 text-blue-800' }
-];
-
-export default function CustomersPage() {
-  const router = useRouter();
+const CustomersPage = () => {
   const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [formData, setFormData] = useState<CustomerFormData>({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+    address: {
+      street: '',
+      city: '',
+      district: '',
+      postalCode: ''
+    },
+    notes: ''
+  });
+
+  const API_BASE_URL = 'http://localhost:5001/api';
 
   useEffect(() => {
-    if (user) {
-      loadCustomers();
-    }
-  }, [user]);
+    loadCustomers();
+  }, []);
 
   const loadCustomers = async () => {
     try {
       setLoading(true);
-      
-      const token = localStorage.getItem('ototakibim_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('https://ototakibim-mvp.onrender.com/api/customers', {
+      const response = await fetch(`${API_BASE_URL}/customers?search=${searchTerm}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch customers');
+        throw new Error('Müşteriler yüklenirken hata oluştu');
       }
 
       const data = await response.json();
       setCustomers(data.data || []);
     } catch (error) {
-      console.error('Customers loading error:', error);
+      console.error('Error loading customers:', error);
+      toast.error('Müşteriler yüklenirken hata oluştu');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    const statusOption = statusOptions.find(s => s.value === status);
-    return statusOption ? statusOption.color : 'bg-gray-100 text-gray-800';
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadCustomers();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const url = selectedCustomer 
+        ? `${API_BASE_URL}/customers/${selectedCustomer._id}`
+        : `${API_BASE_URL}/customers`;
+      
+      const method = selectedCustomer ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        throw new Error(selectedCustomer ? 'Müşteri güncellenirken hata oluştu' : 'Müşteri oluşturulurken hata oluştu');
+      }
+
+      toast.success(selectedCustomer ? 'Müşteri başarıyla güncellendi' : 'Müşteri başarıyla oluşturuldu');
+      setShowAddModal(false);
+      setShowEditModal(false);
+      setSelectedCustomer(null);
+      resetForm();
+      loadCustomers();
+    } catch (error) {
+      console.error('Error saving customer:', error);
+      toast.error(selectedCustomer ? 'Müşteri güncellenirken hata oluştu' : 'Müşteri oluşturulurken hata oluştu');
+    }
   };
 
-  const getStatusLabel = (status: string) => {
-    const statusOption = statusOptions.find(s => s.value === status);
-    return statusOption ? statusOption.label : status;
+  const handleEdit = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setFormData({
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      phone: customer.phone,
+      email: customer.email || '',
+      address: customer.address || {
+        street: '',
+        city: '',
+        district: '',
+        postalCode: ''
+      },
+      notes: customer.notes || ''
+    });
+    setShowEditModal(true);
   };
 
-  const handleDeleteCustomer = async (customerId: string) => {
+  const handleDelete = async (customerId: string) => {
     if (!confirm('Bu müşteriyi silmek istediğinizden emin misiniz?')) {
       return;
     }
 
     try {
-      const token = localStorage.getItem('ototakibim_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`https://ototakibim-mvp.onrender.com/api/customers/${customerId}`, {
+      const response = await fetch(`${API_BASE_URL}/customers/${customerId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete customer');
+        throw new Error('Müşteri silinirken hata oluştu');
       }
 
-      // Reload customers list
-      await loadCustomers();
-      alert('Müşteri başarıyla silindi');
+      toast.success('Müşteri başarıyla silindi');
+      loadCustomers();
     } catch (error) {
-      console.error('Delete customer error:', error);
-      alert('Müşteri silinirken hata oluştu: ' + (error as Error).message);
+      console.error('Error deleting customer:', error);
+      toast.error('Müşteri silinirken hata oluştu');
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('tr-TR', {
-      style: 'currency',
-      currency: 'TRY'
-    }).format(amount);
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      address: {
+        street: '',
+        city: '',
+        district: '',
+        postalCode: ''
+      },
+      notes: ''
+    });
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('tr-TR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(new Date(date));
+  const openAddModal = () => {
+    resetForm();
+    setSelectedCustomer(null);
+    setShowAddModal(true);
   };
 
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.phone.includes(searchTerm) ||
-                         customer.company?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const getTotalCustomers = () => customers.length;
-  const getActiveCustomers = () => customers.filter(c => c.status === 'active').length;
-  const getVipCustomers = () => customers.filter(c => c.status === 'vip').length;
-  const getTotalRevenue = () => customers.reduce((sum, c) => sum + c.totalSpent, 0);
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Giriş Gerekli</h2>
-          <p className="text-gray-600 mb-4">Bu sayfayı görüntülemek için giriş yapmalısınız</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Giriş Yap
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Müşteriler yükleniyor...</p>
-        </div>
-      </div>
-    );
-  }
+  const filteredCustomers = customers.filter(customer =>
+    customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.phone.includes(searchTerm) ||
+    (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="p-6">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-6">
-            <button
-              onClick={() => router.back()}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors mr-4"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Users className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Müşteriler</h1>
-                <p className="text-gray-600">Tüm müşteri profillerini yönetin ve takip edin</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Müşteri Yönetimi</h1>
+        <p className="text-gray-600">Müşterilerinizi yönetin ve takip edin</p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Toplam Müşteri</p>
-                <p className="text-2xl font-bold text-gray-900">{getTotalCustomers()}</p>
-              </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-lg shadow p-6"
+        >
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+              <UserIcon className="h-6 w-6" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Toplam Müşteri</p>
+              <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
             </div>
           </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <UserPlus className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Aktif Müşteri</p>
-                <p className="text-2xl font-bold text-gray-900">{getActiveCustomers()}</p>
-              </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-lg shadow p-6"
+        >
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-green-100 text-green-600">
+              <PhoneIcon className="h-6 w-6" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Aktif Müşteri</p>
+              <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
             </div>
           </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Star className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">VIP Müşteri</p>
-                <p className="text-2xl font-bold text-gray-900">{getVipCustomers()}</p>
-              </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-lg shadow p-6"
+        >
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+              <EnvelopeIcon className="h-6 w-6" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Email Kayıtlı</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {customers.filter(c => c.email).length}
+              </p>
             </div>
           </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Toplam Gelir</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(getTotalRevenue())}</p>
-              </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-lg shadow p-6"
+        >
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-purple-100 text-purple-600">
+              <MapPinIcon className="h-6 w-6" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Adres Kayıtlı</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {customers.filter(c => c.address?.street).length}
+              </p>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Controls */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Müşteri adı, email veya telefon ara..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-            
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-2 border rounded-lg transition-colors flex items-center space-x-2 ${
-                  showFilters 
-                    ? 'border-purple-500 text-purple-600 bg-purple-50' 
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <Filter className="w-4 h-4" />
-                <span>Filtreler</span>
-              </button>
-              <button
-                onClick={() => router.push('/dashboard/customers/add')}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Yeni Müşteri</span>
-              </button>
-            </div>
-          </div>
+      {/* Search and Add Button */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Müşteri ara..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <button
+          onClick={openAddModal}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+        >
+          <PlusIcon className="h-5 w-5" />
+          Yeni Müşteri
+        </button>
+      </div>
 
-          {/* Filters */}
-          {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
+      {/* Customers Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Müşteriler yükleniyor...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Müşteri
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    İletişim
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Adres
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Kayıt Tarihi
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    İşlemler
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredCustomers.map((customer) => (
+                  <motion.tr
+                    key={customer._id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="hover:bg-gray-50"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <UserIcon className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {customer.firstName} {customer.lastName}
+                          </div>
+                          {customer.notes && (
+                            <div className="text-sm text-gray-500 truncate max-w-xs">
+                              {customer.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{customer.phone}</div>
+                      {customer.email && (
+                        <div className="text-sm text-gray-500">{customer.email}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {customer.address?.street ? (
+                        <div className="text-sm text-gray-900">
+                          {customer.address.street}
+                          <br />
+                          {customer.address.district}, {customer.address.city}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">Adres yok</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(customer.createdAt).toLocaleDateString('tr-TR')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEdit(customer)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(customer._id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Add Customer Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          >
+            <h2 className="text-xl font-bold mb-4">Yeni Müşteri Ekle</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Durum</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  >
-                    <option value="all">Tümü</option>
-                    {statusOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ad *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Soyad *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Customers List */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">
-              Müşteriler ({filteredCustomers.length})
-            </h3>
-          </div>
-          
-          <div className="p-6">
-            {filteredCustomers.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredCustomers.map((customer) => (
-                  <div key={customer._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                          <span className="text-lg font-bold text-purple-600">
-                            {customer.firstName[0]}{customer.lastName[0]}
-                          </span>
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-medium text-gray-900">
-                            {customer.firstName} {customer.lastName}
-                          </h4>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(customer.status)}`}>
-                            {getStatusLabel(customer.status)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteCustomer(customer._id)}
-                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Contact Info */}
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Mail className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-600">{customer.email}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-600">{customer.phone}</span>
-                      </div>
-                      {customer.company && (
-                        <div className="flex items-center space-x-2 text-sm">
-                          <Building className="w-4 h-4 text-gray-500" />
-                          <span className="text-gray-600">{customer.company}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center space-x-2 text-sm">
-                        <MapPin className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-600">
-                          {customer.address.city}, {customer.address.state}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Vehicles */}
-                    <div className="mb-4">
-                      <h5 className="font-medium text-gray-900 mb-2 flex items-center space-x-2">
-                        <Car className="w-4 h-4" />
-                        <span>Araçlar ({customer.vehicles.length})</span>
-                      </h5>
-                      <div className="space-y-2">
-                        {customer.vehicles.map((vehicle) => (
-                          <div key={vehicle._id} className="text-sm bg-gray-50 p-2 rounded">
-                            <span className="font-medium">{vehicle.brand} {vehicle.model}</span>
-                            <span className="text-gray-600 ml-2">({vehicle.plate})</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="text-center p-3 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Toplam Harcama</p>
-                        <p className="text-lg font-bold text-blue-600">{formatCurrency(customer.totalSpent)}</p>
-                      </div>
-                      <div className="text-center p-3 bg-green-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Loyalty Puanı</p>
-                        <p className="text-lg font-bold text-green-600">{customer.loyaltyPoints}</p>
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="pt-4 border-t border-gray-200">
-                      <div className="flex justify-between items-center text-sm text-gray-600 mb-3">
-                        <span>Son Ziyaret: {formatDate(customer.lastVisit)}</span>
-                        <span>Kayıt: {formatDate(customer.createdAt)}</span>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                          Detay Görüntüle
-                        </button>
-                        <button className="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm">
-                          Düzenle
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Telefon *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Müşteri Bulunamadı</h3>
-                <p className="text-gray-600 mb-6">
-                  {searchTerm || statusFilter !== 'all'
-                    ? 'Arama kriterlerinize uygun müşteri bulunamadı.' 
-                    : 'Henüz müşteri eklenmemiş.'}
-                </p>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sokak Adresi
+                </label>
+                <input
+                  type="text"
+                  value={formData.address.street}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    address: { ...formData.address, street: e.target.value }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    İlçe
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.district}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      address: { ...formData.address, district: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Şehir
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.city}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      address: { ...formData.address, city: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Posta Kodu
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.postalCode}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      address: { ...formData.address, postalCode: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notlar
+                </label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
                 <button
-                  onClick={() => router.push('/dashboard/customers/add')}
-                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
                 >
-                  İlk Müşteriyi Ekle
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Kaydet
                 </button>
               </div>
-            )}
-          </div>
+            </form>
+          </motion.div>
         </div>
-      </div>
+      )}
+
+      {/* Edit Customer Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          >
+            <h2 className="text-xl font-bold mb-4">Müşteri Düzenle</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ad *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Soyad *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Telefon *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sokak Adresi
+                </label>
+                <input
+                  type="text"
+                  value={formData.address.street}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    address: { ...formData.address, street: e.target.value }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    İlçe
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.district}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      address: { ...formData.address, district: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Şehir
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.city}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      address: { ...formData.address, city: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Posta Kodu
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.postalCode}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      address: { ...formData.address, postalCode: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notlar
+                </label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Güncelle
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default CustomersPage;

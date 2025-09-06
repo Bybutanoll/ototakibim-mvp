@@ -6,7 +6,7 @@ import {
   WifiOff, 
   Cloud, 
   CloudOff, 
-  Sync, 
+  RefreshCw, 
   AlertCircle, 
   CheckCircle,
   Clock,

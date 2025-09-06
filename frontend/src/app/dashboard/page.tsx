@@ -123,11 +123,11 @@ export default function Dashboard() {
       }
 
       // Load vehicles data with timeout
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
-      const vehiclesResponse = await fetch(`${API_BASE_URL}/api/vehicles`, {
+      const vehiclesResponse = await fetch(`${API_BASE_URL}/vehicles`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -222,7 +222,7 @@ export default function Dashboard() {
       const token = localStorage.getItem('ototakibim_token');
       if (!token) return;
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
       const response = await fetch(`${API_BASE_URL}/api/ai/dashboard-insights`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -402,7 +402,37 @@ export default function Dashboard() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (tab.id === 'vehicles') {
+                    router.push('/dashboard/vehicles');
+                  } else if (tab.id === 'work-orders') {
+                    router.push('/dashboard/work-orders');
+                  } else if (tab.id === 'appointments') {
+                    router.push('/dashboard/appointments');
+                  } else if (tab.id === 'customers') {
+                    router.push('/dashboard/customers');
+                  } else if (tab.id === 'finance') {
+                    router.push('/dashboard/finance');
+                  } else if (tab.id === 'payments') {
+                    router.push('/dashboard/payments');
+                  } else if (tab.id === 'inventory') {
+                    router.push('/dashboard/inventory');
+                  } else if (tab.id === 'analytics') {
+                    router.push('/dashboard/analytics');
+                  } else if (tab.id === 'reports') {
+                    router.push('/dashboard/reports');
+                  } else if (tab.id === 'smart-pricing') {
+                    router.push('/dashboard/smart-pricing');
+                  } else if (tab.id === 'security') {
+                    router.push('/dashboard/security');
+                  } else if (tab.id === 'mobile') {
+                    router.push('/dashboard/mobile');
+                  } else if (tab.id === 'notifications') {
+                    router.push('/dashboard/notifications');
+                  } else {
+                    setActiveTab(tab.id);
+                  }
+                }}
                 className={`py-4 px-3 border-b-2 font-medium text-sm flex items-center space-x-2 transition-all duration-300 rounded-t-lg ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600 bg-blue-50/50'

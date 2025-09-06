@@ -1,0 +1,118 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient definitions -->
+    <linearGradient id="circleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a365d" />
+      <stop offset="30%" stop-color="#2d5aa0" />
+      <stop offset="70%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#1a365d" />
+    </linearGradient>
+    
+    <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af" />
+      <stop offset="50%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+    
+    <linearGradient id="circuitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    
+    <!-- Glow filter -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Sparkle filter -->
+    <filter id="sparkle" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1" result="sparkleBlur"/>
+      <feMerge> 
+        <feMergeNode in="sparkleBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background Circle (O) with circuit pattern -->
+  <g id="circle-o">
+    <!-- Main circle stroke -->
+    <circle
+      cx="100"
+      cy="100"
+      r="80"
+      fill="none"
+      stroke="url(#circleGradient)"
+      stroke-width="8"
+      stroke-linecap="round"
+    />
+    
+    <!-- Circuit pattern nodes -->
+    <g id="circuit-nodes" opacity="0.8">
+      <circle cx="70" cy="70" r="3" fill="url(#circuitGradient)" filter="url(#sparkle)" />
+      <circle cx="130" cy="70" r="3" fill="#ec4899" filter="url(#sparkle)" />
+      <circle cx="70" cy="130" r="3" fill="#3b82f6" filter="url(#sparkle)" />
+      <circle cx="130" cy="130" r="3" fill="#06b6d4" filter="url(#sparkle)" />
+      <circle cx="100" cy="50" r="2" fill="#ec4899" filter="url(#sparkle)" />
+      <circle cx="50" cy="100" r="2" fill="#3b82f6" filter="url(#sparkle)" />
+      <circle cx="150" cy="100" r="2" fill="#06b6d4" filter="url(#sparkle)" />
+      <circle cx="100" cy="150" r="2" fill="#ec4899" filter="url(#sparkle)" />
+    </g>
+    
+    <!-- Circuit connections -->
+    <g id="circuit-lines" opacity="0.6" stroke-width="1.5">
+      <line x1="70" y1="70" x2="130" y2="70" stroke="#06b6d4" />
+      <line x1="70" y1="130" x2="130" y2="130" stroke="#ec4899" />
+      <line x1="70" y1="70" x2="70" y2="130" stroke="#3b82f6" />
+      <line x1="130" y1="70" x2="130" y2="130" stroke="#06b6d4" />
+      <line x1="100" y1="50" x2="100" y2="70" stroke="#ec4899" />
+      <line x1="50" y1="100" x2="70" y2="100" stroke="#3b82f6" />
+      <line x1="130" y1="100" x2="150" y2="100" stroke="#06b6d4" />
+      <line x1="100" y1="130" x2="100" y2="150" stroke="#ec4899" />
+    </g>
+  </g>
+  
+  <!-- Arrow (T) with dynamic design -->
+  <g id="arrow-t">
+    <!-- Main T structure -->
+    <path
+      d="M 60 140 L 140 140 L 140 60 L 120 60 L 120 120 L 80 120 L 80 60 L 60 60 Z"
+      fill="url(#arrowGradient)"
+      filter="url(#glow)"
+    />
+    
+    <!-- Arrow head enhancement -->
+    <path
+      d="M 120 60 L 140 60 L 130 50 Z"
+      fill="#ec4899"
+      filter="url(#glow)"
+    />
+    
+    <!-- T crossbar enhancement -->
+    <rect
+      x="60"
+      y="120"
+      width="80"
+      height="8"
+      fill="url(#arrowGradient)"
+      rx="4"
+      filter="url(#glow)"
+    />
+  </g>
+  
+  <!-- Sparkle effects -->
+  <g id="sparkles" opacity="0.7">
+    <circle cx="85" cy="85" r="1" fill="#ffffff" filter="url(#sparkle)" />
+    <circle cx="115" cy="85" r="1" fill="#ffffff" filter="url(#sparkle)" />
+    <circle cx="85" cy="115" r="1" fill="#ffffff" filter="url(#sparkle)" />
+    <circle cx="115" cy="115" r="1" fill="#ffffff" filter="url(#sparkle)" />
+    <circle cx="100" cy="75" r="0.8" fill="#ffffff" filter="url(#sparkle)" />
+    <circle cx="75" cy="100" r="0.8" fill="#ffffff" filter="url(#sparkle)" />
+    <circle cx="125" cy="100" r="0.8" fill="#ffffff" filter="url(#sparkle)" />
+    <circle cx="100" cy="125" r="0.8" fill="#ffffff" filter="url(#sparkle)" />
+  </g>
+</svg>

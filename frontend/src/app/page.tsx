@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import LogoAnimation from '@/components/LogoAnimation';
+import { LogoLogin } from '@/components/ui/Logo';
 import AdvancedParticleSystem, { ProgressiveParticleSystem } from '@/components/AdvancedParticleSystem';
 import LogoLoadingSequence from '@/components/LogoLoadingSequence';
 import PremiumButton, { FAB } from '@/components/PremiumButton';

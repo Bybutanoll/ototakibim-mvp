@@ -1,82 +1,31 @@
 [build]
-  # Build command
   command = "npm run build"
-  
-  # Publish directory
   publish = ".next"
+  # Base directory for the frontend application
+  base = "frontend"
 
-[build.environment]
-  # Node.js version
-  NODE_VERSION = "18"
-  
-  # Build environment
-  NODE_ENV = "production"
+[functions]
+  node_bundler = "esbuild"
+  directory = "netlify/functions" # Optional: if you have serverless functions
 
-# Redirect rules for SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false # Ensure client-side routing works
 
-# Headers for security and performance
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'self';"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Cache-Control = "public, max-age=31536000, immutable" # Aggressive caching for static assets
 
-# Cache static assets
-[[headers]]
-  for = "/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# Cache images
-[[headers]]
-  for = "*.jpg"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
-[[headers]]
-  for = "*.png"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
-[[headers]]
-  for = "*.svg"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
-# Cache fonts
-[[headers]]
-  for = "*.woff"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
-[[headers]]
-  for = "*.woff2"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000"
-
-# PWA support
-[[headers]]
-  for = "/manifest.json"
-  [headers.values]
-    Content-Type = "application/manifest+json"
-    Cache-Control = "public, max-age=86400"
-
-[[headers]]
-  for = "/sw.js"
-  [headers.values]
-    Content-Type = "application/javascript"
-    Cache-Control = "public, max-age=0"
-
-# API routes
-[[redirects]]
-  from = "/api/*"
-  to = "https://ototakibim-backend.onrender.com/api/:splat"
-  status = 200
-  force = true
+# Force cache invalidation
+[build.environment]
+  NETLIFY_CACHE_VERSION = "2"

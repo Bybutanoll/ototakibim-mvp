@@ -75,8 +75,12 @@ export const corsOptions = {
       'http://localhost:3001',
       'https://ototakibim-mvp.netlify.app',
       'https://ototakipv2.netlify.app',
+      'https://ototakibim.netlify.app',
       'https://ototakibim.com',
-      'https://www.ototakibim.com'
+      'https://www.ototakibim.com',
+      // Development origins
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
     ];
 
     // Allow requests with no origin (mobile apps, Postman, etc.)

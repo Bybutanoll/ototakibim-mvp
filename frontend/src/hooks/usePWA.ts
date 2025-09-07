@@ -14,7 +14,7 @@ export const usePWA = () => {
   const [pwaState, setPwaState] = useState<PWAState>({
     isInstalled: false,
     isInstallable: false,
-    isOnline: navigator.onLine,
+    isOnline: typeof window !== 'undefined' ? navigator.onLine : true,
     isUpdateAvailable: false,
     installPrompt: null,
     swRegistration: null
@@ -24,7 +24,7 @@ export const usePWA = () => {
   const checkIfInstalled = useCallback(() => {
     const isInstalled = 
       window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone ||
+      (typeof window !== 'undefined' && (window.navigator as any).standalone) ||
       document.referrer.includes('android-app://');
     
     setPwaState(prev => ({ ...prev, isInstalled }));
@@ -70,9 +70,9 @@ export const usePWA = () => {
 
   // Handle online/offline status
   const handleOnlineStatus = useCallback(() => {
-    setPwaState(prev => ({ ...prev, isOnline: navigator.onLine }));
+    setPwaState(prev => ({ ...prev, isOnline: typeof window !== 'undefined' ? navigator.onLine : true }));
     
-    if (navigator.onLine) {
+    if (typeof window !== 'undefined' && navigator.onLine) {
       toast.success('İnternet bağlantısı geri geldi');
     } else {
       toast.error('İnternet bağlantısı kesildi - Çevrimdışı modda çalışıyorsunuz');
@@ -81,7 +81,7 @@ export const usePWA = () => {
 
   // Register service worker
   const registerServiceWorker = useCallback(async () => {
-    if ('serviceWorker' in navigator) {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.register('/sw.js');
         console.log('Service Worker registered:', registration);
@@ -93,7 +93,7 @@ export const usePWA = () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              if (newWorker.state === 'installed' && typeof window !== 'undefined' && navigator.serviceWorker.controller) {
                 setPwaState(prev => ({ ...prev, isUpdateAvailable: true }));
                 toast.success('Yeni güncelleme mevcut! Sayfayı yenileyin.');
               }
@@ -102,11 +102,13 @@ export const usePWA = () => {
         });
 
         // Handle service worker messages
-        navigator.serviceWorker.addEventListener('message', (event) => {
+        if (typeof window !== 'undefined') {
+          navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data && event.data.type === 'CACHE_UPDATED') {
             toast.success('Uygulama güncellendi');
           }
         });
+        }
 
       } catch (error) {
         console.error('Service Worker registration failed:', error);

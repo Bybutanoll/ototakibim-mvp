@@ -87,8 +87,8 @@ export const PerformanceMonitor = () => {
             id: metric.id,
             navigationType: metric.navigationType,
             timestamp: Date.now(),
-            url: window.location.href,
-            userAgent: navigator.userAgent,
+            url: typeof window !== 'undefined' ? window.location.href : 'server',
+            userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'server',
           }),
         }).catch(console.error);
       }

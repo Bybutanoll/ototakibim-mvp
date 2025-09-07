@@ -61,7 +61,7 @@ export const PWAProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Service Worker Registration
     const registerServiceWorker = async () => {
-      if ('serviceWorker' in navigator) {
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         try {
           const registration = await navigator.serviceWorker.register('/sw.js');
           console.log('Service Worker registered:', registration);
@@ -73,7 +73,7 @@ export const PWAProvider = ({ children }: { children: React.ReactNode }) => {
             const newWorker = registration.installing;
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                if (newWorker.state === 'installed' && typeof window !== 'undefined' && navigator.serviceWorker.controller) {
                   setPwaState(prev => ({ ...prev, updateAvailable: true }));
                   toast.success('Yeni güncelleme mevcut!', {
                     icon: '🔄',
@@ -95,13 +95,15 @@ export const PWAProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     // Event listeners
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setPwaState(prev => ({ ...prev, isInstalled: true }));
+      // Check if already installed
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        setPwaState(prev => ({ ...prev, isInstalled: true }));
+      }
     }
 
     // Register service worker
@@ -109,15 +111,17 @@ export const PWAProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Cleanup
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      }
     };
   }, []);
 
   // Install PWA
   const handleInstall = async () => {
-    if (pwaState.installPrompt) {
+    if (typeof window !== 'undefined' && pwaState.installPrompt) {
       const result = await pwaState.installPrompt.prompt();
       console.log('Install prompt result:', result);
       

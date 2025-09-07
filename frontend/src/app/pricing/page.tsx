@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { usePayment } from '@/contexts/PaymentContext';
 import { Check, Star, Zap, Shield, Users, BarChart3, ArrowRight, CreditCard, Building, User } from 'lucide-react';
 import Link from 'next/link';

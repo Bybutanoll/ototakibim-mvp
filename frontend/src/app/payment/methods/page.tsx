@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { usePayment } from '@/contexts/PaymentContext';
-import { useProtectedRoute } from '@/contexts/AuthContext';
+import { useProtectedRoute } from '../../../contexts/AuthContext';
 import { 
   CreditCard, 
   Plus, 

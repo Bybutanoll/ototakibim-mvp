@@ -20,7 +20,7 @@ import {
   PlayIcon,
   StopIcon
 } from '@heroicons/react/24/outline';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 interface Customer {

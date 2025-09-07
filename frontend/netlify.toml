@@ -1,6 +1,6 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  publish = "out"
   # Base directory for the frontend application
   base = "frontend"
 

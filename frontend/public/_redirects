@@ -1,6 +1,2 @@
-# Netlify redirects for Next.js
-# API routes için proxy
-/api/*  https://ototakibim-mvp.onrender.com/api/:splat  200
-
-# SPA routing için
+# Netlify redirects for Next.js SPA routing
 /*    /index.html   200

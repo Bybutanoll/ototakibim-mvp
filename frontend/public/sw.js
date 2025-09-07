@@ -1,7 +1,3 @@
-// OtoTakibim Service Worker
-// Version: 1.0.0
-// Last Updated: 2024-01-15
-
 const CACHE_NAME = 'ototakibim-v1.0.0';
 const STATIC_CACHE = 'ototakibim-static-v1.0.0';
 const DYNAMIC_CACHE = 'ototakibim-dynamic-v1.0.0';
@@ -10,29 +6,26 @@ const DYNAMIC_CACHE = 'ototakibim-dynamic-v1.0.0';
 const STATIC_ASSETS = [
   '/',
   '/dashboard',
-  '/dashboard/customers',
-  '/dashboard/vehicles',
-  '/dashboard/work-orders',
-  '/dashboard/appointments',
-  '/dashboard/inventory',
-  '/dashboard/payments',
-  '/dashboard/reports',
+  '/login',
+  '/register',
   '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
+  '/favicon.ico',
+  '/apple-touch-icon.png',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png',
+  '/site.webmanifest',
   '/_next/static/css/',
-  '/_next/static/js/'
+  '/_next/static/js/',
+  '/_next/static/media/'
 ];
 
 // API endpoints to cache
 const API_CACHE_PATTERNS = [
-  /\/api\/customers/,
-  /\/api\/vehicles/,
-  /\/api\/work-orders/,
-  /\/api\/appointments/,
-  /\/api\/inventory/,
-  /\/api\/payments/,
-  /\/api\/reports/
+  '/api/auth/',
+  '/api/vehicles/',
+  '/api/work-orders/',
+  '/api/customers/',
+  '/api/appointments/'
 ];
 
 // Install event - cache static assets
@@ -46,7 +39,7 @@ self.addEventListener('install', (event) => {
         return cache.addAll(STATIC_ASSETS);
       })
       .then(() => {
-        console.log('Service Worker: Static assets cached successfully');
+        console.log('Service Worker: Static assets cached');
         return self.skipWaiting();
       })
       .catch((error) => {
@@ -72,7 +65,7 @@ self.addEventListener('activate', (event) => {
         );
       })
       .then(() => {
-        console.log('Service Worker: Activated successfully');
+        console.log('Service Worker: Activated');
         return self.clients.claim();
       })
   );
@@ -93,36 +86,75 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle API requests
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(handleApiRequest(request));
-    return;
-  }
-
-  // Handle static assets
-  if (isStaticAsset(request.url)) {
+  // Handle different types of requests
+  if (isStaticAsset(request)) {
     event.respondWith(handleStaticAsset(request));
-    return;
-  }
-
-  // Handle page requests
-  if (request.headers.get('accept')?.includes('text/html')) {
+  } else if (isApiRequest(request)) {
+    event.respondWith(handleApiRequest(request));
+  } else if (isPageRequest(request)) {
     event.respondWith(handlePageRequest(request));
-    return;
+  } else {
+    event.respondWith(handleOtherRequest(request));
   }
-
-  // Default: try cache first, then network
-  event.respondWith(handleDefaultRequest(request));
 });
 
-// Handle API requests with network-first strategy
+// Check if request is for static assets
+function isStaticAsset(request) {
+  const url = new URL(request.url);
+  return (
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/static/') ||
+    url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)
+  );
+}
+
+// Check if request is for API
+function isApiRequest(request) {
+  const url = new URL(request.url);
+  return url.pathname.startsWith('/api/');
+}
+
+// Check if request is for a page
+function isPageRequest(request) {
+  const url = new URL(request.url);
+  return (
+    url.pathname === '/' ||
+    url.pathname.startsWith('/dashboard') ||
+    url.pathname.startsWith('/login') ||
+    url.pathname.startsWith('/register') ||
+    (!url.pathname.includes('.') && !url.pathname.startsWith('/api/'))
+  );
+}
+
+// Handle static assets - cache first strategy
+async function handleStaticAsset(request) {
+  try {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    console.error('Service Worker: Failed to handle static asset', error);
+    return new Response('Offline - Static asset not available', {
+      status: 503,
+      statusText: 'Service Unavailable'
+    });
+  }
+}
+
+// Handle API requests - network first strategy
 async function handleApiRequest(request) {
   try {
-    // Try network first
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
-      // Cache successful responses
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, networkResponse.clone());
     }
@@ -131,52 +163,26 @@ async function handleApiRequest(request) {
   } catch (error) {
     console.log('Service Worker: Network failed, trying cache for API request');
     
-    // Fallback to cache
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       return cachedResponse;
     }
     
     // Return offline response for API requests
-    return new Response(
-      JSON.stringify({
-        status: 'error',
-        message: 'İnternet bağlantısı yok. Lütfen bağlantınızı kontrol edin.',
-        offline: true
-      }),
-      {
-        status: 503,
-        statusText: 'Service Unavailable',
-        headers: { 'Content-Type': 'application/json' }
+    return new Response(JSON.stringify({
+      error: 'Offline',
+      message: 'İnternet bağlantısı yok. Lütfen bağlantınızı kontrol edin.'
+    }), {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: {
+        'Content-Type': 'application/json'
       }
-    );
+    });
   }
 }
 
-// Handle static assets with cache-first strategy
-async function handleStaticAsset(request) {
-  const cachedResponse = await caches.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  try {
-    const networkResponse = await fetch(request);
-    
-    if (networkResponse.ok) {
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, networkResponse.clone());
-    }
-    
-    return networkResponse;
-  } catch (error) {
-    console.log('Service Worker: Failed to fetch static asset', request.url);
-    return new Response('Asset not available offline', { status: 404 });
-  }
-}
-
-// Handle page requests with network-first strategy
+// Handle page requests - network first with fallback
 async function handlePageRequest(request) {
   try {
     const networkResponse = await fetch(request);
@@ -195,106 +201,57 @@ async function handlePageRequest(request) {
       return cachedResponse;
     }
     
-    // Return offline page
-    return caches.match('/offline.html') || new Response(
-      `
-      <!DOCTYPE html>
-      <html lang="tr">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Çevrimdışı - OtoTakibim</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-align: center;
-          }
-          .container {
-            max-width: 400px;
-            padding: 2rem;
-          }
-          h1 { font-size: 2rem; margin-bottom: 1rem; }
-          p { font-size: 1.1rem; margin-bottom: 2rem; opacity: 0.9; }
-          .retry-btn {
-            background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-          }
-          .retry-btn:hover {
-            background: rgba(255,255,255,0.3);
-            border-color: rgba(255,255,255,0.5);
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>🔌 Çevrimdışı</h1>
-          <p>İnternet bağlantınız yok. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.</p>
-          <button class="retry-btn" onclick="window.location.reload()">
-            Tekrar Dene
-          </button>
-        </div>
-      </body>
-      </html>
-      `,
-      {
-        status: 200,
-        statusText: 'OK',
-        headers: { 'Content-Type': 'text/html' }
-      }
-    );
-  }
-}
-
-// Handle default requests
-async function handleDefaultRequest(request) {
-  const cachedResponse = await caches.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  try {
-    const networkResponse = await fetch(request);
-    
-    if (networkResponse.ok) {
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, networkResponse.clone());
+    // Fallback to offline page
+    const offlineResponse = await caches.match('/offline.html');
+    if (offlineResponse) {
+      return offlineResponse;
     }
     
-    return networkResponse;
-  } catch (error) {
-    console.log('Service Worker: Failed to fetch', request.url);
-    return new Response('Resource not available offline', { status: 404 });
+    // Return basic offline response
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Offline - OtoTakibim</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .offline { color: #666; }
+            .retry { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+          </style>
+        </head>
+        <body>
+          <h1 class="offline">📱 Offline Mod</h1>
+          <p>İnternet bağlantınız yok. Lütfen bağlantınızı kontrol edin.</p>
+          <button class="retry" onclick="window.location.reload()">Tekrar Dene</button>
+        </body>
+      </html>
+    `, {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'Content-Type': 'text/html'
+      }
+    });
   }
 }
 
-// Check if request is for static asset
-function isStaticAsset(url) {
-  return url.includes('/_next/static/') ||
-         url.includes('/icon-') ||
-         url.includes('/manifest.json') ||
-         url.endsWith('.css') ||
-         url.endsWith('.js') ||
-         url.endsWith('.png') ||
-         url.endsWith('.jpg') ||
-         url.endsWith('.jpeg') ||
-         url.endsWith('.gif') ||
-         url.endsWith('.svg') ||
-         url.endsWith('.woff') ||
-         url.endsWith('.woff2');
+// Handle other requests - network first
+async function handleOtherRequest(request) {
+  try {
+    return await fetch(request);
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
+    return new Response('Offline - Resource not available', {
+      status: 503,
+      statusText: 'Service Unavailable'
+    });
+  }
 }
 
 // Background sync for offline actions
@@ -306,41 +263,28 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-// Handle background sync
 async function doBackgroundSync() {
   try {
-    // Get pending offline actions from IndexedDB
-    const pendingActions = await getPendingActions();
+    // Sync offline data when connection is restored
+    console.log('Service Worker: Performing background sync');
     
-    for (const action of pendingActions) {
-      try {
-        await fetch(action.url, {
-          method: action.method,
-          headers: action.headers,
-          body: action.body
-        });
-        
-        // Remove from pending actions
-        await removePendingAction(action.id);
-        console.log('Service Worker: Synced action', action.id);
-      } catch (error) {
-        console.error('Service Worker: Failed to sync action', action.id, error);
-      }
-    }
+    // You can implement specific sync logic here
+    // For example, sync offline form submissions, etc.
+    
   } catch (error) {
     console.error('Service Worker: Background sync failed', error);
   }
 }
 
-// Push notification handling
+// Push notifications
 self.addEventListener('push', (event) => {
   console.log('Service Worker: Push notification received');
   
   const options = {
-    body: 'Yeni bildirim var',
+    body: event.data ? event.data.text() : 'Yeni bildirim',
     icon: '/icon-192x192.png',
-    badge: '/icon-72x72.png',
-    vibrate: [200, 100, 200],
+    badge: '/badge-72x72.png',
+    vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
       primaryKey: 1
@@ -359,18 +303,12 @@ self.addEventListener('push', (event) => {
     ]
   };
   
-  if (event.data) {
-    const data = event.data.json();
-    options.body = data.body || options.body;
-    options.title = data.title || 'OtoTakibim';
-  }
-  
   event.waitUntil(
     self.registration.showNotification('OtoTakibim', options)
   );
 });
 
-// Notification click handling
+// Notification click
 self.addEventListener('notificationclick', (event) => {
   console.log('Service Worker: Notification clicked');
   
@@ -380,18 +318,10 @@ self.addEventListener('notificationclick', (event) => {
     event.waitUntil(
       clients.openWindow('/dashboard')
     );
-  } else if (event.action === 'close') {
-    // Just close the notification
-    return;
-  } else {
-    // Default action - open dashboard
-    event.waitUntil(
-      clients.openWindow('/dashboard')
-    );
   }
 });
 
-// Message handling from main thread
+// Message handling
 self.addEventListener('message', (event) => {
   console.log('Service Worker: Message received', event.data);
   
@@ -404,33 +334,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Helper functions for IndexedDB operations
-async function getPendingActions() {
-  // This would typically use IndexedDB to store pending actions
-  // For now, return empty array
-  return [];
-}
-
-async function removePendingAction(id) {
-  // This would typically remove the action from IndexedDB
-  console.log('Service Worker: Removing pending action', id);
-}
-
-// Cache management
-async function clearOldCaches() {
-  const cacheNames = await caches.keys();
-  const oldCaches = cacheNames.filter(name => 
-    name.startsWith('ototakibim-') && name !== CACHE_NAME
-  );
-  
-  return Promise.all(
-    oldCaches.map(cacheName => caches.delete(cacheName))
-  );
-}
-
-// Periodic cache cleanup
-setInterval(() => {
-  clearOldCaches().then(() => {
-    console.log('Service Worker: Old caches cleaned up');
-  });
-}, 24 * 60 * 60 * 1000); // Daily cleanup
+console.log('Service Worker: Loaded successfully');

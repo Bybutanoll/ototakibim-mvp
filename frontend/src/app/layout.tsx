@@ -7,6 +7,9 @@ import { PaymentProvider } from '@/contexts/PaymentContext';
 import { QueryProvider } from '@/providers/QueryProvider';
 import PWAInstaller from '@/components/PWAInstaller';
 import MobileLayout from '@/components/MobileLayout';
+import { PWAProvider } from '@/components/PWAProvider';
+import PerformanceMonitor from '@/components/PerformanceMonitor';
+import { preloadCriticalComponents } from '@/components/LazyComponents';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -85,8 +88,24 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="OtoTakibim" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="application-name" content="OtoTakibim" />
+        
+        {/* Preload critical resources */}
+        <link rel="preload" href="/_next/static/css/app.css" as="style" />
+        <link rel="preload" href="/_next/static/chunks/framework.js" as="script" />
+        <link rel="preload" href="/_next/static/chunks/main.js" as="script" />
+        
+        {/* DNS prefetch for external resources */}
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+        <link rel="dns-prefetch" href="//ototakibim-mvp.onrender.com" />
+        
+        {/* Preconnect to critical origins */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://ototakibim-mvp.onrender.com" />
       </head>
-              <body className={inter.className}>
+      <body className={inter.className}>
+        <PWAProvider>
           <QueryProvider>
             <AuthProvider>
               <AppointmentProvider>
@@ -95,11 +114,27 @@ export default function RootLayout({
                     {children}
                   </MobileLayout>
                   <PWAInstaller />
+                  <PerformanceMonitor />
                 </PaymentProvider>
               </AppointmentProvider>
             </AuthProvider>
           </QueryProvider>
-        </body>
+        </PWAProvider>
+        
+        {/* Critical component preloading */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Preload critical components after page load
+              window.addEventListener('load', function() {
+                setTimeout(function() {
+                  ${preloadCriticalComponents.toString()}();
+                }, 1000);
+              });
+            `,
+          }}
+        />
+      </body>
     </html>
   );
 }

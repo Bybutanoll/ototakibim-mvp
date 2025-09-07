@@ -19,22 +19,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../../contexts/AuthContext';
 import toast from 'react-hot-toast';
-
-interface Customer {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email?: string;
-}
-
-interface Vehicle {
-  _id: string;
-  plate: string;
-  brand: string;
-  vehicleModel: string;
-  year: number;
-}
+import { workOrderService, WorkOrder } from '../../../services/workOrderService';
+import { vehicleService, Vehicle } from '../../../services/vehicleService';
+import { customerService, Customer } from '../../../services/customerService';
+import { SEO, SEOConfigs } from '@/components/SEO';
 
 interface Technician {
   _id: string;
@@ -42,46 +30,6 @@ interface Technician {
   lastName: string;
 }
 
-interface WorkOrder {
-  _id: string;
-  title: string;
-  description: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold' | 'waiting-parts' | 'waiting-approval' | 'quality-check';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  type: 'maintenance' | 'repair' | 'inspection' | 'diagnostic' | 'emergency';
-  estimatedDuration: number;
-  actualDuration?: number;
-  estimatedCost: number;
-  actualCost?: number;
-  laborCost: number;
-  partsCost: number;
-  scheduledDate: string;
-  startDate?: string;
-  completedDate?: string;
-  customer: Customer;
-  vehicle: Vehicle;
-  assignedTechnician?: Technician;
-  workflow: {
-    currentStep: number;
-    totalSteps: number;
-    steps: Array<{
-      stepNumber: number;
-      name: string;
-      status: 'pending' | 'in-progress' | 'completed' | 'skipped';
-      estimatedTime: number;
-      actualTime?: number;
-    }>;
-  };
-  statusHistory: Array<{
-    fromStatus: string;
-    toStatus: string;
-    changedAt: string;
-    changedBy: string;
-    reason?: string;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-}
 
 const WorkOrdersPage = () => {
   const { user } = useAuth();
@@ -92,7 +40,6 @@ const WorkOrdersPage = () => {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [stats, setStats] = useState<any>(null);
 
-  const API_BASE_URL = 'http://localhost:5001/api';
 
   useEffect(() => {
     loadWorkOrders();
@@ -102,19 +49,11 @@ const WorkOrdersPage = () => {
   const loadWorkOrders = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/work-orders?search=${searchTerm}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await workOrderService.getAllWorkOrders({ 
+        search: searchTerm,
+        limit: 50 
       });
-
-      if (!response.ok) {
-        throw new Error('İş emirleri yüklenirken hata oluştu');
-      }
-
-      const data = await response.json();
-      setWorkOrders(data.data || []);
+      setWorkOrders(response.workOrders || []);
     } catch (error) {
       console.error('Error loading work orders:', error);
       toast.error('İş emirleri yüklenirken hata oluştu');
@@ -125,19 +64,8 @@ const WorkOrdersPage = () => {
 
   const loadStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/work-orders/stats`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('İstatistikler yüklenirken hata oluştu');
-      }
-
-      const data = await response.json();
-      setStats(data.data);
+      const response = await workOrderService.getWorkOrderStats();
+      setStats(response);
     } catch (error) {
       console.error('Error loading stats:', error);
     }
@@ -216,11 +144,10 @@ const WorkOrdersPage = () => {
 
   const filteredWorkOrders = workOrders.filter(workOrder => {
     const matchesSearch = 
-      workOrder.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      workOrder.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       workOrder.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      workOrder.customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      workOrder.customer.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      workOrder.vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase());
+      workOrder.customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      workOrder.vehicle?.plate.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || workOrder.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || workOrder.priority === priorityFilter;
@@ -229,9 +156,11 @@ const WorkOrdersPage = () => {
   });
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-8">
+    <>
+      <SEO {...SEOConfigs.workOrders} />
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">İş Emri Yönetimi</h1>
         <p className="text-gray-600">İş emirlerinizi yönetin ve takip edin</p>
       </div>
@@ -405,20 +334,20 @@ const WorkOrdersPage = () => {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {workOrder.title}
+                            {workOrder.orderNumber}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {getTypeLabel(workOrder.type)} • {workOrder.estimatedDuration}h
+                            {getTypeLabel(workOrder.status)} • {workOrder.estimatedHours}h
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {workOrder.customer.firstName} {workOrder.customer.lastName}
+                        {workOrder.customer?.name || 'Bilinmeyen Müşteri'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {workOrder.vehicle.plate} • {workOrder.vehicle.brand} {workOrder.vehicle.vehicleModel}
+                        {workOrder.vehicle?.plate || 'Bilinmeyen Plaka'} • {workOrder.vehicle?.brand} {workOrder.vehicle?.vehicleModel}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -436,7 +365,7 @@ const WorkOrdersPage = () => {
                       {workOrder.assignedTechnician ? (
                         <div>
                           <div className="font-medium">
-                            {workOrder.assignedTechnician.firstName} {workOrder.assignedTechnician.lastName}
+                            {workOrder.technician?.name || 'Atanmamış'}
                           </div>
                         </div>
                       ) : (
@@ -458,11 +387,11 @@ const WorkOrdersPage = () => {
                         <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
                           <div 
                             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${(workOrder.workflow.currentStep / workOrder.workflow.totalSteps) * 100}%` }}
+                            style={{ width: `${workOrder.status === 'completed' ? 100 : workOrder.status === 'in_progress' ? 50 : 25}%` }}
                           ></div>
                         </div>
                         <span className="text-sm text-gray-600">
-                          {workOrder.workflow.currentStep}/{workOrder.workflow.totalSteps}
+                          {workOrder.status === 'completed' ? 'Tamamlandı' : workOrder.status === 'in_progress' ? 'Devam Ediyor' : 'Beklemede'}
                         </span>
                       </div>
                     </td>
@@ -499,7 +428,8 @@ const WorkOrdersPage = () => {
           </p>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

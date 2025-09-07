@@ -2,21 +2,10 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { authService, LoginCredentials, RegisterCredentials, User } from '../services/authService';
 
-// Types
-export interface User {
-  _id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  company?: string;
-  role: 'user' | 'admin' | 'manager';
-  isActive: boolean;
-  onboardingCompleted?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// Types - using service types
+export type { User, LoginCredentials, RegisterCredentials } from '../services/authService';
 
 export interface AuthState {
   user: User | null;
@@ -26,20 +15,6 @@ export interface AuthState {
   error: string | null;
 }
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterCredentials {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  company?: string;
-  role?: string;
-}
 
 export interface AuthContextType {
   state: AuthState;
@@ -130,8 +105,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 // Create Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// API Base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 // Auth Provider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -142,25 +115,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const token = localStorage.getItem('ototakibim_token');
+        const token = authService.getStoredToken();
         if (token) {
-          // Verify token with backend
-          const response = await fetch(`${API_BASE_URL}/auth/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
+          try {
+            // Verify token with backend
+            const user = await authService.getProfile();
             dispatch({
               type: 'AUTH_SUCCESS',
-              payload: { user: data.user, token },
+              payload: { user, token },
             });
-          } else {
-            // Token is invalid, remove it
-            localStorage.removeItem('ototakibim_token');
+          } catch (error) {
+            // Token is invalid, clear auth data
+            authService.clearAuthData();
             dispatch({ type: 'AUTH_LOGOUT' });
           }
         } else {
@@ -180,27 +146,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       dispatch({ type: 'AUTH_START' });
 
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      // Store token
-      localStorage.setItem('ototakibim_token', data.token);
+      const response = await authService.login(credentials);
 
       // Update state
       dispatch({
         type: 'AUTH_SUCCESS',
-        payload: { user: data.user, token: data.token },
+        payload: { user: response.user, token: response.token },
       });
 
       // Redirect to dashboard
@@ -217,27 +168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       dispatch({ type: 'AUTH_START' });
 
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
-
-      // Store token
-      localStorage.setItem('ototakibim_token', data.token);
+      const response = await authService.register(credentials);
 
       // Update state
       dispatch({
         type: 'AUTH_SUCCESS',
-        payload: { user: data.user, token: data.token },
+        payload: { user: response.user, token: response.token },
       });
 
       // Redirect to dashboard
@@ -250,35 +186,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Logout function
-  const logout = (): void => {
-    localStorage.removeItem('ototakibim_token');
-    dispatch({ type: 'AUTH_LOGOUT' });
-    router.push('/');
+  const logout = async (): Promise<void> => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      dispatch({ type: 'AUTH_LOGOUT' });
+      router.push('/');
+    }
   };
 
   // Update profile function
   const updateProfile = async (userData: Partial<User>): Promise<void> => {
     try {
-      if (!state.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${state.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Profile update failed');
-      }
-
-      dispatch({ type: 'UPDATE_USER', payload: data.user });
+      const updatedUser = await authService.updateProfile(userData);
+      dispatch({ type: 'UPDATE_USER', payload: updatedUser });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Profile update failed';
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });

@@ -4,6 +4,23 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import AIChatbot from '@/components/AIChatbot';
+import { LogoHeader } from '@/components/ui/Logo';
+import { vehicleService, Vehicle } from '../../services/vehicleService';
+import { workOrderService, WorkOrder } from '../../services/workOrderService';
+import { appointmentService, Appointment } from '../../services/appointmentService';
+import { 
+  LoadingOverlay, 
+  InlineLoading, 
+  SkeletonCard, 
+  useLoadingState 
+} from '@/components/LoadingStates';
+import { 
+  ErrorMessage, 
+  NetworkError, 
+  EmptyState, 
+  useErrorHandler 
+} from '@/components/ErrorHandling';
+import { SEO, SEOConfigs } from '@/components/SEO';
 import { 
   Car, 
   Wrench, 
@@ -33,37 +50,7 @@ import {
   Brain
 } from 'lucide-react';
 
-interface Vehicle {
-  _id: string;
-  plate: string;
-  brand: string;
-  vehicleModel: string;
-  year: number;
-  color: string;
-  mileage: number;
-  lastService?: Date;
-}
-
-interface WorkOrder {
-  _id: string;
-  title: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled' | 'on-hold';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  vehicle: Vehicle;
-  estimatedCost: number;
-  scheduledDate: Date;
-  assignedTechnician?: string;
-}
-
-interface Appointment {
-  _id: string;
-  title: string;
-  status: 'scheduled' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled';
-  scheduledDate: Date;
-  startTime: string;
-  vehicle: Vehicle;
-  serviceType: string;
-}
+// Using types from services
 
 interface DashboardStats {
   totalVehicles: number;
@@ -88,9 +75,12 @@ export default function Dashboard() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [aiInsights, setAiInsights] = useState<any>(null);
+  
+  // Loading and error states
+  const { isLoading, startLoading, stopLoading } = useLoadingState(true);
+  const { error, handleError, clearError, hasError } = useErrorHandler();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -99,12 +89,12 @@ export default function Dashboard() {
     }
   }, [state.isLoading, state.isAuthenticated, router]);
 
-  // Redirect to onboarding if not completed
-  useEffect(() => {
-    if (user && !user.onboardingCompleted) {
-      router.push('/dashboard/onboarding');
-    }
-  }, [user, router]);
+  // Redirect to onboarding if not completed (commented out for now)
+  // useEffect(() => {
+  //   if (user && !user.onboardingCompleted) {
+  //     router.push('/dashboard/onboarding');
+  //   }
+  // }, [user, router]);
 
   useEffect(() => {
     if (user && state.isAuthenticated) {
@@ -115,105 +105,75 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
+      startLoading();
+      clearError();
       
-      const token = localStorage.getItem('ototakibim_token');
-      if (!token) {
-        throw new Error('No authentication token found');
+      // Load all data in parallel using service layer
+      const [vehiclesData, workOrdersData, appointmentsData, vehicleStats, workOrderStats, appointmentStats] = await Promise.allSettled([
+        vehicleService.getAllVehicles({ limit: 10 }),
+        workOrderService.getAllWorkOrders({ limit: 10 }),
+        appointmentService.getAllAppointments({ limit: 10 }),
+        vehicleService.getVehicleStats(),
+        workOrderService.getWorkOrderStats(),
+        appointmentService.getAppointmentStats()
+      ]);
+
+      // Process vehicles data
+      if (vehiclesData.status === 'fulfilled') {
+        setVehicles(vehiclesData.value.vehicles);
+      } else if (vehiclesData.status === 'rejected') {
+        console.error('Vehicles data failed:', vehiclesData.reason);
       }
 
-      // Load vehicles data with timeout
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      const vehiclesResponse = await fetch(`${API_BASE_URL}/vehicles`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
+      // Process work orders data
+      if (workOrdersData.status === 'fulfilled') {
+        setWorkOrders(workOrdersData.value.workOrders);
+      } else if (workOrdersData.status === 'rejected') {
+        console.error('Work orders data failed:', workOrdersData.reason);
+      }
+
+      // Process appointments data
+      if (appointmentsData.status === 'fulfilled') {
+        setAppointments(appointmentsData.value.appointments);
+      } else if (appointmentsData.status === 'rejected') {
+        console.error('Appointments data failed:', appointmentsData.reason);
+      }
+
+      // Calculate dashboard stats from all sources
+      const totalVehicles = vehiclesData.status === 'fulfilled' ? vehiclesData.value.total : 0;
+      const activeWorkOrders = workOrderStats.status === 'fulfilled' ? 
+        workOrderStats.value.pending + workOrderStats.value.in_progress : 0;
+      const upcomingAppointments = appointmentStats.status === 'fulfilled' ? 
+        appointmentStats.value.scheduled + appointmentStats.value.confirmed : 0;
+      const monthlyRevenue = workOrderStats.status === 'fulfilled' ? 
+        workOrderStats.value.totalRevenue : 0;
+      const completedServices = workOrderStats.status === 'fulfilled' ? 
+        workOrderStats.value.completed : 0;
+      const customerSatisfaction = 4.8; // Default value, can be calculated from feedback
+
+      setStats({
+        totalVehicles,
+        activeWorkOrders,
+        upcomingAppointments,
+        monthlyRevenue,
+        completedServices,
+        customerSatisfaction
       });
-      
-      clearTimeout(timeoutId);
 
-      if (vehiclesResponse.ok) {
-        const vehiclesData = await vehiclesResponse.json();
-        const vehiclesList = vehiclesData.data || [];
-        setVehicles(vehiclesList);
+      // Check if all critical data failed
+      const criticalFailures = [vehiclesData, workOrdersData, appointmentsData].filter(
+        result => result.status === 'rejected'
+      ).length;
 
-        // Calculate stats from real data
-        const totalVehicles = vehiclesList.length;
-        const activeWorkOrders = 0; // Will be implemented when work orders are ready
-        const upcomingAppointments = 0; // Will be implemented when appointments are ready
-        
-        // Calculate total maintenance cost from last 30 days
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
-        let monthlyRevenue = 0;
-        let completedServices = 0;
-        
-        vehiclesList.forEach((vehicle: any) => {
-          if (vehicle.maintenanceHistory) {
-            vehicle.maintenanceHistory.forEach((maintenance: any) => {
-              const maintenanceDate = new Date(maintenance.date);
-              if (maintenanceDate >= thirtyDaysAgo) {
-                monthlyRevenue += maintenance.cost;
-                completedServices++;
-              }
-            });
-          }
-        });
-
-        const calculatedStats: DashboardStats = {
-          totalVehicles,
-          activeWorkOrders,
-          upcomingAppointments,
-          monthlyRevenue,
-          completedServices,
-          customerSatisfaction: 4.8 // Default value, can be calculated from feedback
-        };
-
-        setStats(calculatedStats);
+      if (criticalFailures >= 2) {
+        handleError('Veriler yüklenirken hata oluştu. Lütfen sayfayı yenileyin.', 'dashboard_data_load');
       }
 
-      // Mock data for work orders and appointments (will be replaced with real API calls)
-      const mockWorkOrders: WorkOrder[] = [];
-      const mockAppointments: Appointment[] = [];
-
-      setWorkOrders(mockWorkOrders);
-      setAppointments(mockAppointments);
     } catch (error) {
       console.error('Dashboard veri yükleme hatası:', error);
-      
-      // Handle specific error types
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          console.error('API request timeout');
-        } else if (error.message.includes('token')) {
-          console.error('Authentication error');
-          // Redirect to login if token is invalid
-          localStorage.removeItem('ototakibim_token');
-          router.push('/login');
-          return;
-        }
-      }
-      
-      // Fallback to empty data on error
-      setStats({
-        totalVehicles: 0,
-        activeWorkOrders: 0,
-        upcomingAppointments: 0,
-        monthlyRevenue: 0,
-        completedServices: 0,
-        customerSatisfaction: 0
-      });
-      setVehicles([]);
-      setWorkOrders([]);
-      setAppointments([]);
+      handleError(error instanceof Error ? error : new Error('Beklenmeyen bir hata oluştu'), 'dashboard_load');
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
@@ -288,45 +248,44 @@ export default function Dashboard() {
   };
 
   // Show loading while auth is being checked or data is loading
-  if (state.isLoading || loading) {
-      return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  // Show loading state
+  if (state.isLoading || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header Skeleton */}
           <div className="mb-8">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+            <SkeletonCard className="h-20" />
           </div>
-          
-          {/* Stats Cards Skeleton */}
+
+          {/* Stats Grid Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white p-6 rounded-lg shadow-sm">
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2 animate-pulse"></div>
-                <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse"></div>
-              </div>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonCard key={i} />
             ))}
           </div>
-          
-          {/* Content Skeleton */}
+
+          {/* Content Grid Skeleton */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
-                ))}
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
-                ))}
-              </div>
-            </div>
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorMessage 
+            error={error!} 
+            onRetry={loadDashboardData}
+            onDismiss={clearError}
+            variant="inline"
+          />
         </div>
       </div>
     );
@@ -338,18 +297,23 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header - Premium Design */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-white/20">
+    <>
+      <SEO {...SEOConfigs.dashboard} />
+      <div className="min-h-screen bg-gray-50">
+        {/* Header - Premium Design */}
+        <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Hoş geldin, {user?.firstName}! 👋
-              </h1>
-              <p className="text-gray-600 mt-1">
-                OtoTakibim Dashboard - Araçlarını ve hizmetlerini yönet
-              </p>
+            <div className="flex items-center space-x-4">
+              <LogoHeader />
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Hoş geldin, {user?.name}! 👋
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  OtoTakibim Dashboard - Araçlarını ve hizmetlerini yönet
+                </p>
+              </div>
             </div>
             <div className="flex space-x-3">
               <button
@@ -692,21 +656,21 @@ export default function Dashboard() {
                       {appointments.map((appointment) => (
                         <div key={appointment._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                           <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{appointment.title}</h4>
-                            <p className="text-sm text-gray-600">{appointment.vehicle.plate}</p>
+                            <h4 className="font-medium text-gray-900">{appointment.serviceType}</h4>
+                            <p className="text-sm text-gray-600">{appointment.vehicle?.plate}</p>
                             <div className="flex items-center space-x-2 mt-2">
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
                                 {appointment.status === 'scheduled' && 'Planlandı'}
                                 {appointment.status === 'confirmed' && 'Onaylandı'}
-                                {appointment.status === 'in-progress' && 'İşlemde'}
+                                {appointment.status === 'in_progress' && 'İşlemde'}
                                 {appointment.status === 'completed' && 'Tamamlandı'}
                                 {appointment.status === 'cancelled' && 'İptal Edildi'}
                               </span>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium text-gray-900">{appointment.startTime}</p>
-                            <p className="text-sm text-gray-600">{formatDate(appointment.scheduledDate)}</p>
+                            <p className="font-medium text-gray-900">{appointment.scheduledTime}</p>
+                            <p className="text-sm text-gray-600">{formatDate(new Date(appointment.scheduledDate))}</p>
                           </div>
                         </div>
                       ))}
@@ -1236,6 +1200,7 @@ export default function Dashboard() {
 
       {/* AI Chatbot */}
       <AIChatbot />
-    </div>
+      </div>
+    </>
   );
 }

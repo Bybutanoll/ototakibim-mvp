@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Eye, EyeOff, Mail, Lock, Car, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { LogoLogin } from '@/components/ui/Logo';

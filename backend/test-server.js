@@ -17,6 +17,15 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    message: 'Test server is running'
+  });
+});
+
 // Demo login endpoint
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;

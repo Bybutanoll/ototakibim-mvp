@@ -2,19 +2,31 @@ import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
+  // Multi-tenant fields
+  tenantId: string; // Tenant reference
+  tenantRole: 'owner' | 'manager' | 'technician'; // Role within tenant
+  
+  // Personal information
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   password: string;
-  role: 'admin' | 'manager' | 'technician';
+  
+  // Global role (for super admin)
+  globalRole?: 'super_admin' | 'admin';
+  
+  // Status
   isActive: boolean;
   avatar?: string;
-  stripeCustomerId?: string;
   onboardingCompleted?: boolean;
-  businessName?: string;
-  businessType?: string;
-  address?: string;
+  
+  // Business information (moved to tenant)
+  businessName?: string; // Deprecated - use tenant.companyName
+  businessType?: string; // Deprecated - use tenant settings
+  address?: string; // Deprecated - use tenant.address
+  
+  // Authentication
   refreshTokens?: string[];
   passwordResetToken?: string;
   passwordResetExpires?: Date;
@@ -23,15 +35,37 @@ export interface IUser extends Document {
   lastLogin?: Date;
   loginAttempts?: number;
   lockUntil?: Date;
+  
+  // Timestamps
   createdAt: Date;
   updatedAt: Date;
+  
+  // Methods
   comparePassword(candidatePassword: string): Promise<boolean>;
   isLocked(): boolean;
   incLoginAttempts(): Promise<void>;
   resetLoginAttempts(): Promise<void>;
+  hasPermission(permission: string): boolean;
+  isOwner(): boolean;
+  isManager(): boolean;
+  isTechnician(): boolean;
 }
 
 const userSchema = new Schema<IUser>({
+  // Multi-tenant fields
+  tenantId: {
+    type: String,
+    required: [true, 'Tenant ID gereklidir'],
+    index: true
+  },
+  tenantRole: {
+    type: String,
+    enum: ['owner', 'manager', 'technician'],
+    default: 'technician',
+    required: true
+  },
+  
+  // Personal information
   firstName: {
     type: String,
     required: [true, 'Ad gereklidir'],
@@ -47,7 +81,6 @@ const userSchema = new Schema<IUser>({
   email: {
     type: String,
     required: [true, 'Email gereklidir'],
-    unique: true,
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Geçerli bir email adresi giriniz']
@@ -64,10 +97,10 @@ const userSchema = new Schema<IUser>({
     minlength: [6, 'Şifre en az 6 karakter olmalıdır'],
     select: false
   },
-  role: {
+  globalRole: {
     type: String,
-    enum: ['admin', 'manager', 'technician'],
-    default: 'technician'
+    enum: ['super_admin', 'admin'],
+    default: undefined
   },
   isActive: {
     type: Boolean,
@@ -76,10 +109,6 @@ const userSchema = new Schema<IUser>({
   avatar: {
     type: String,
     default: ''
-  },
-  stripeCustomerId: {
-    type: String,
-    default: null
   },
   onboardingCompleted: {
     type: Boolean,
@@ -138,8 +167,11 @@ userSchema.virtual('fullName').get(function() {
   return `${this.firstName} ${this.lastName}`;
 });
 
-// Indexes (email already has unique: true, so no need for separate index)
-userSchema.index({ role: 1 });
+// Indexes
+userSchema.index({ tenantId: 1, email: 1 }, { unique: true }); // Unique email per tenant
+userSchema.index({ tenantId: 1, tenantRole: 1 });
+userSchema.index({ tenantId: 1, isActive: 1 });
+userSchema.index({ globalRole: 1 });
 userSchema.index({ isActive: 1 });
 
 // Pre-save middleware to hash password
@@ -196,6 +228,46 @@ userSchema.methods.resetLoginAttempts = async function(): Promise<void> {
   return this.updateOne({
     $unset: { loginAttempts: 1, lockUntil: 1 }
   });
+};
+
+// Method to check permissions
+userSchema.methods.hasPermission = function(permission: string): boolean {
+  // Super admin has all permissions
+  if (this.globalRole === 'super_admin') return true;
+  
+  // Global admin has most permissions
+  if (this.globalRole === 'admin') {
+    return !['delete_tenant', 'manage_global_settings'].includes(permission);
+  }
+  
+  // Tenant-based permissions
+  const rolePermissions = {
+    owner: [
+      'read', 'write', 'delete', 'manage_users', 'manage_settings',
+      'view_analytics', 'manage_billing', 'manage_integrations'
+    ],
+    manager: [
+      'read', 'write', 'view_analytics', 'manage_technicians'
+    ],
+    technician: [
+      'read', 'write:own_orders', 'view_own_analytics'
+    ]
+  };
+  
+  return rolePermissions[this.tenantRole as keyof typeof rolePermissions]?.includes(permission) || false;
+};
+
+// Role check methods
+userSchema.methods.isOwner = function(): boolean {
+  return this.tenantRole === 'owner';
+};
+
+userSchema.methods.isManager = function(): boolean {
+  return this.tenantRole === 'manager';
+};
+
+userSchema.methods.isTechnician = function(): boolean {
+  return this.tenantRole === 'technician';
 };
 
 export default mongoose.model<IUser>('User', userSchema);

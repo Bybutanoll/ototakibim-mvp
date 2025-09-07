@@ -1,6 +1,9 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IWorkOrder extends Document {
+  // Multi-tenant field
+  tenantId: string; // Tenant reference
+  
   owner: mongoose.Types.ObjectId; // User ID (servis sahibi)
   customer: mongoose.Types.ObjectId; // Customer ID (müşteri)
   vehicle: mongoose.Types.ObjectId; // Vehicle ID
@@ -137,6 +140,13 @@ export interface IWorkOrder extends Document {
 }
 
 const workOrderSchema = new Schema<IWorkOrder>({
+  // Multi-tenant field
+  tenantId: {
+    type: String,
+    required: [true, 'Tenant ID gereklidir'],
+    index: true
+  },
+  
   owner: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -537,11 +547,14 @@ const workOrderSchema = new Schema<IWorkOrder>({
 });
 
 // Indexes
-// owner, customer, vehicle, assignedTechnician already have index: true, no need for separate indexes
-workOrderSchema.index({ isActive: 1 });
-workOrderSchema.index({ scheduledDate: 1, status: 1 });
-workOrderSchema.index({ status: 1, priority: 1 });
-workOrderSchema.index({ createdAt: 1 });
+workOrderSchema.index({ tenantId: 1, owner: 1 });
+workOrderSchema.index({ tenantId: 1, customer: 1 });
+workOrderSchema.index({ tenantId: 1, vehicle: 1 });
+workOrderSchema.index({ tenantId: 1, assignedTechnician: 1 });
+workOrderSchema.index({ tenantId: 1, isActive: 1 });
+workOrderSchema.index({ tenantId: 1, scheduledDate: 1, status: 1 });
+workOrderSchema.index({ tenantId: 1, status: 1, priority: 1 });
+workOrderSchema.index({ tenantId: 1, createdAt: 1 });
 
 // Text search index
 workOrderSchema.index({
@@ -550,8 +563,8 @@ workOrderSchema.index({
 });
 
 // Static method to find work orders by owner
-workOrderSchema.statics.findByOwner = function(ownerId: string) {
-  return this.find({ owner: ownerId, isActive: true })
+workOrderSchema.statics.findByOwner = function(tenantId: string, ownerId: string) {
+  return this.find({ tenantId, owner: ownerId, isActive: true })
     .populate('customer', 'firstName lastName phone email')
     .populate('vehicle', 'plate brand vehicleModel year')
     .populate('assignedTechnician', 'firstName lastName')
@@ -559,8 +572,8 @@ workOrderSchema.statics.findByOwner = function(ownerId: string) {
 };
 
 // Static method to find work orders by customer
-workOrderSchema.statics.findByCustomer = function(customerId: string) {
-  return this.find({ customer: customerId, isActive: true })
+workOrderSchema.statics.findByCustomer = function(tenantId: string, customerId: string) {
+  return this.find({ tenantId, customer: customerId, isActive: true })
     .populate('customer', 'firstName lastName phone email')
     .populate('vehicle', 'plate brand vehicleModel year')
     .populate('assignedTechnician', 'firstName lastName')
@@ -568,8 +581,8 @@ workOrderSchema.statics.findByCustomer = function(customerId: string) {
 };
 
 // Static method to find work orders by vehicle
-workOrderSchema.statics.findByVehicle = function(vehicleId: string) {
-  return this.find({ vehicle: vehicleId, isActive: true })
+workOrderSchema.statics.findByVehicle = function(tenantId: string, vehicleId: string) {
+  return this.find({ tenantId, vehicle: vehicleId, isActive: true })
     .populate('customer', 'firstName lastName phone email')
     .populate('vehicle', 'plate brand vehicleModel year')
     .populate('assignedTechnician', 'firstName lastName')
@@ -577,8 +590,9 @@ workOrderSchema.statics.findByVehicle = function(vehicleId: string) {
 };
 
 // Static method to search work orders
-workOrderSchema.statics.searchByOwner = function(ownerId: string, searchTerm: string) {
+workOrderSchema.statics.searchByOwner = function(tenantId: string, ownerId: string, searchTerm: string) {
   return this.find({
+    tenantId,
     owner: ownerId,
     isActive: true,
     $or: [

@@ -22,6 +22,7 @@ import biRoutes from './routes/bi';
 import serviceRoutes from './routes/services';
 import appointmentRoutes from './routes/appointments';
 import reportRoutes from './routes/reports';
+import tenantRoutes from './routes/tenant';
 import {
   securityHeaders,
   corsOptions,
@@ -127,6 +128,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/tenant', tenantRoutes);
 
 // 404 handler
 app.use('*', notFound);

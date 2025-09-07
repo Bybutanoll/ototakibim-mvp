@@ -1,6 +1,9 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ICustomer extends Document {
+  // Multi-tenant field
+  tenantId: string; // Tenant reference
+  
   firstName: string;
   lastName: string;
   phone: string;
@@ -23,6 +26,13 @@ export interface ICustomer extends Document {
 }
 
 const customerSchema = new Schema<ICustomer>({
+  // Multi-tenant field
+  tenantId: {
+    type: String,
+    required: [true, 'Tenant ID gereklidir'],
+    index: true
+  },
+  
   firstName: {
     type: String,
     required: [true, 'Ad gereklidir'],

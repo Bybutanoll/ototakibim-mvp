@@ -1,6 +1,9 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IVehicle extends Document {
+  // Multi-tenant field
+  tenantId: string; // Tenant reference
+  
   owner: mongoose.Types.ObjectId; // User ID (servis sahibi)
   customer: mongoose.Types.ObjectId; // Customer ID (araç sahibi)
   plate: string; // Plaka
@@ -45,6 +48,13 @@ export interface IVehicleModel extends mongoose.Model<IVehicle> {
 }
 
 const vehicleSchema = new Schema<IVehicle>({
+  // Multi-tenant field
+  tenantId: {
+    type: String,
+    required: [true, 'Tenant ID gereklidir'],
+    index: true
+  },
+  
   owner: {
     type: Schema.Types.ObjectId,
     ref: 'User',

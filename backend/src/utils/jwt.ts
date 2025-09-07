@@ -11,7 +11,9 @@ const JWT_REFRESH_EXPIRE = process.env.JWT_REFRESH_EXPIRE || '30d';
 export interface TokenPayload {
   id: string;
   email: string;
-  role: string;
+  tenantId: string;
+  tenantRole: string;
+  globalRole?: string;
   iat?: number;
   exp?: number;
 }
@@ -110,7 +112,12 @@ export const verifyRefreshToken = (token: string): { id: string } | null => {
  * Legacy function for backward compatibility
  */
 export const generateToken = (userId: string): string => {
-  return generateAccessToken({ id: userId, email: '', role: 'user' });
+  return generateAccessToken({ 
+    id: userId, 
+    email: '', 
+    tenantId: 'default-tenant',
+    tenantRole: 'technician'
+  });
 };
 
 /**

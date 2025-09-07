@@ -1,15 +1,17 @@
 [build]
   base = "frontend"
-  command = "npm install && npm run build"
-  publish = ".next"
+  command = "npm run build"
+  publish = "out"
 
 [build.environment]
   NODE_VERSION = "18"
-  NEXT_PUBLIC_API_URL = "https://ototakibim-mvp.onrender.com"
+  NEXT_PUBLIC_API_URL = "https://ototakibim-mvp.onrender.com/api"
 
-# Netlify Next.js Plugin - SSR, ISR ve API routes için gerekli
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+# SPA routing için redirects
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 # Headers for better performance
 [[headers]]

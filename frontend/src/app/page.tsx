@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   ArrowRight, 
   Car, 
@@ -13,12 +13,10 @@ import {
   Clock, 
   CheckCircle, 
   Zap, 
-  Globe, 
   Smartphone, 
   Phone, 
   Mail, 
   MapPin, 
-  MessageCircle,
   Award,
   Play,
   Brain,
@@ -31,504 +29,131 @@ import {
   ThumbsUp,
   Eye,
   Lock,
-  RefreshCw
+  RefreshCw,
+  ChevronRight,
+  ArrowDown
 } from 'lucide-react';
 import Link from 'next/link';
-import LogoAnimation from '@/components/LogoAnimation';
 import { LogoLogin } from '@/components/ui/Logo';
-import AdvancedParticleSystem, { ProgressiveParticleSystem } from '@/components/AdvancedParticleSystem';
-import LogoLoadingSequence from '@/components/LogoLoadingSequence';
-import PremiumButton, { FAB } from '@/components/PremiumButton';
-import PremiumCard, { FeatureCard, StatsCard, PricingCard } from '@/components/PremiumCard';
-import { logoAnalytics } from '@/utils/analytics';
-import '@/styles/brand-system.css';
-import '@/styles/premium-design-system.css';
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 300], [0, -50]);
 
   useEffect(() => {
     setIsVisible(true);
-    
-    // Initialize analytics
-    logoAnalytics.trackDeviceCapabilities();
-    logoAnalytics.initPerformanceObserver();
-    
-    // Track page load
-    logoAnalytics.trackUserEngagement('page_load');
-    
-    // Simulate loading sequence
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      logoAnalytics.trackLogoAnimationComplete('hero_section');
-    }, 2500);
-    
-    return () => clearTimeout(timer);
   }, []);
 
-  const features = [
-    {
-      icon: Brain,
-      title: "AI Destekli Bakım Tahminleri",
-      description: "Yapay zeka ile araç bakım zamanlarını önceden tahmin edin",
-      color: "from-blue-500 to-cyan-500"
-    },
-    {
-      icon: BarChart3,
-      title: "Detaylı Analitik Dashboard",
-      description: "Araç maliyetlerini ve performansını takip edin",
-      color: "from-purple-500 to-pink-500"
-    },
-    {
-      icon: Shield,
-      title: "Güvenli Veri Saklama",
-      description: "KVKK uyumlu, şifreli veri saklama sistemi",
-      color: "from-green-500 to-emerald-500"
-    },
-    {
-      icon: Smartphone,
-      title: "Mobil Uyumlu",
-      description: "Her cihazdan erişim, responsive tasarım",
-      color: "from-orange-500 to-red-500"
-    },
-    {
-      icon: Zap,
-      title: "Hızlı ve Kolay",
-      description: "Sadece birkaç tıklama ile araç yönetimi",
-      color: "from-yellow-500 to-orange-500"
-    },
-    {
-      icon: Users,
-      title: "Müşteri Desteği",
-      description: "7/24 Türkçe müşteri desteği",
-      color: "from-indigo-500 to-purple-500"
+  const fadeInUp = {
+    initial: { opacity: 0, y: 60 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6 }
+  };
+
+  const staggerContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.1
+      }
     }
-  ];
-
-  const stats = [
-    { number: "10,000+", label: "Mutlu Müşteri", icon: Users },
-    { number: "50,000+", label: "Yönetilen Araç", icon: Car },
-    { number: "₺2M+", label: "Tasarruf Sağlandı", icon: DollarSign },
-    { number: "99.9%", label: "Uptime", icon: Shield }
-  ];
-
-  const testimonials = [
-    {
-      name: "Mehmet Yılmaz",
-      role: "Oto Servis Sahibi",
-      content: "OtoTakibim sayesinde işletmem %40 daha verimli hale geldi. AI tahminleri gerçekten işe yarıyor!",
-      rating: 5,
-      avatar: "👨‍🔧"
-    },
-    {
-      name: "Ayşe Demir",
-      role: "Fleet Manager",
-      content: "50 aracımızı kolayca yönetiyoruz. Dashboard çok kullanışlı ve bilgilendirici.",
-      rating: 5,
-      avatar: "👩‍💼"
-    },
-    {
-      name: "Ali Kaya",
-      role: "Araç Sahibi",
-      content: "Bakım maliyetlerim %30 azaldı. Artık ne zaman servise gitmem gerektiğini biliyorum.",
-      rating: 5,
-      avatar: "👨‍💻"
-    }
-  ];
-
-  const pricingPlans = [
-    {
-      name: "Starter",
-      price: "₺299",
-      period: "/ay",
-      description: "Küçük işletmeler için",
-      features: [
-        "3 araç takibi",
-        "Temel AI tahminleri",
-        "Email desteği",
-        "Mobil uygulama",
-        "Temel raporlar"
-      ],
-      popular: false,
-      color: "from-blue-500 to-cyan-500"
-    },
-    {
-      name: "Professional",
-      price: "₺599",
-      period: "/ay",
-      description: "Büyüyen işletmeler için",
-      features: [
-        "15 araç takibi",
-        "Gelişmiş AI özellikleri",
-        "Öncelikli destek",
-        "Gelişmiş analitik",
-        "API erişimi",
-        "Özel entegrasyonlar"
-      ],
-      popular: true,
-      color: "from-purple-500 to-pink-500"
-    },
-    {
-      name: "Enterprise",
-      price: "₺999",
-      period: "/ay",
-      description: "Büyük işletmeler için",
-      features: [
-        "Sınırsız araç",
-        "Tam AI paketi",
-        "7/24 telefon desteği",
-        "Özel dashboard",
-        "Beyaz etiket çözüm",
-        "Özel geliştirme"
-      ],
-      popular: false,
-      color: "from-green-500 to-emerald-500"
-    }
-  ];
-
-  // Show loading sequence on first visit
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 flex items-center justify-center">
-        <LogoLoadingSequence 
-          onComplete={() => setIsLoading(false)}
-          className="text-center"
-        />
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
-      {/* Advanced Particle System */}
-      <ProgressiveParticleSystem 
-        particleCount={50}
-        enablePhysics={true}
-        enableMagnetism={true}
-        enableWind={true}
-        className="opacity-30"
-      />
-      
-      {/* Hero Section - Logo Animation */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Advanced Background Effects */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900"></div>
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}></div>
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <LogoLogin size="sm" />
+              <span className="text-xl font-bold text-gray-900">OtoTakibim</span>
+            </div>
+            <div className="hidden md:flex items-center space-x-8">
+              <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Özellikler</a>
+              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 transition-colors">Nasıl Çalışır</a>
+              <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Fiyatlandırma</a>
+              <Link href="/login" className="text-gray-600 hover:text-gray-900 transition-colors">Giriş Yap</Link>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link 
+                href="/register" 
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Ücretsiz Başla
+              </Link>
+            </div>
+          </div>
         </div>
-        
-        {/* Interactive Logo Animation */}
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
-          <LogoAnimation 
-            size="large" 
-            showParticles={true}
-            interactive={true}
-            ariaLabel="OtoTakibim Ana Sayfa - Ana sayfaya dön"
-            onClick={() => {
-              logoAnalytics.trackLogoClick('home');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          />
-        </div>
-        
-        {/* Floating Particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-white rounded-full opacity-20"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0.2, 0.8, 0.2],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-            />
-          ))}
-        </div>
+      </nav>
 
-        {/* Main Content */}
-        <motion.div 
-          className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
-          style={{ y }}
-        >
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mb-8"
-          >
+      {/* Hero Section */}
+      <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
             <motion.div
-              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-full text-white/90 text-sm font-medium mb-8"
-              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="mb-8"
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Türkiye'nin İlk AI Destekli Araç Yönetim Sistemi
+              <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mb-6">
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Destekli Araç Yönetimi
+              </span>
+              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+                Araç Bakımınızı
+                <span className="text-blue-600 block">Akıllıca Yönetin</span>
+              </h1>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+                Türkiye'nin ilk yapay zeka destekli araç sağlık asistanı. 
+                Bakım maliyetlerinizi %40 azaltın, sorunları önceden tespit edin.
+              </p>
             </motion.div>
-          </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight"
-          >
-            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              OtoTakibim
-            </span>
-            <br />
-            <span className="text-white/90">Geleceğin Araç Yönetimi</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl md:text-2xl text-white/80 mb-12 max-w-4xl mx-auto leading-relaxed"
-          >
-            Yapay zeka destekli araç bakım tahminleri, detaylı analitik ve 
-            <span className="text-cyan-400 font-semibold"> %40 maliyet tasarrufu</span> ile 
-            araçlarınızı profesyonelce yönetin.
-          </motion.p>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.6 }}
-                  className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
-                >
-                  <Link href="/register">
-                    <PremiumButton
-                      variant="primary"
-                      size="lg"
-                      gradient
-                      glow
-                      leftIcon={<Rocket className="w-5 h-5" />}
-                      rightIcon={<ArrowRight className="w-5 h-5" />}
-                    >
-                      Ücretsiz Başla
-                    </PremiumButton>
-                  </Link>
-
-                  <PremiumButton
-                    variant="outline"
-                    size="lg"
-                    leftIcon={<Play className="w-5 h-5" />}
-                  >
-                    Demo İzle
-                  </PremiumButton>
-                </motion.div>
-
-          {/* Trust Indicators */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-wrap justify-center items-center gap-8 text-white/60"
-          >
-            <div className="flex items-center space-x-2">
-              <Shield className="w-5 h-5" />
-              <span>KVKK Uyumlu</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Lock className="w-5 h-5" />
-              <span>256-bit SSL</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RefreshCw className="w-5 h-5" />
-              <span>99.9% Uptime</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Award className="w-5 h-5" />
-              <span>ISO 27001</span>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll Indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-        >
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center"
-          >
             <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-1 h-3 bg-white/60 rounded-full mt-2"
-            />
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-r from-slate-800/50 to-blue-900/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8"
-          >
-            {stats.map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                viewport={{ once: true }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+            >
+              <Link 
+                href="/register" 
+                className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl"
               >
-                <StatsCard
-                  title={stat.label}
-                  value={stat.number}
-                  variant="gradient"
-                  className="text-center"
-                />
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+                <span>Ücretsiz Başla</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+                <Play className="w-5 h-5" />
+                <span>Demo İzle</span>
+              </button>
+            </motion.div>
 
-      {/* Features Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Neden <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">OtoTakibim</span>?
-            </h2>
-            <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              Türkiye'nin en gelişmiş AI destekli araç yönetim sistemi ile 
-              işletmenizi dijital dönüşüme hazırlayın.
-            </p>
-          </motion.div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {features.map((feature, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 30 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.8, delay: index * 0.1 }}
-                      viewport={{ once: true }}
-                    >
-                      <FeatureCard
-                        icon={feature.icon}
-                        title={feature.title}
-                        description={feature.description}
-                        gradient={index % 2 === 0}
-                        className="h-full"
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section className="py-20 bg-gradient-to-r from-slate-800/50 to-blue-900/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Uygun Fiyatlar</span>
-            </h2>
-            <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              İşletmenizin büyüklüğüne uygun plan seçin. 14 gün ücretsiz deneme.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -10, scale: 1.02 }}
-                className={`relative p-8 rounded-2xl ${
-                  plan.popular 
-                    ? 'bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-500/50' 
-                    : 'bg-white/5 backdrop-blur-sm border border-white/10'
-                } hover:border-white/20 transition-all duration-300`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                      En Popüler
-                    </div>
-                  </div>
-                )}
-                
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-white/70 mb-4">{plan.description}</p>
-                  <div className="flex items-baseline justify-center">
-                    <span className="text-5xl font-bold text-white">{plan.price}</span>
-                    <span className="text-white/70 ml-2">{plan.period}</span>
-                  </div>
-                </div>
-
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                      <span className="text-white/80">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link href="/register">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 ${
-                      plan.popular
-                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/25'
-                        : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
-                    }`}
-                  >
-                    {plan.popular ? 'Hemen Başla' : 'Planı Seç'}
-                  </motion.button>
-                </Link>
-              </motion.div>
-            ))}
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
+            >
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2">%40</div>
+                <div className="text-gray-600">Bakım Maliyeti Azalması</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2">10K+</div>
+                <div className="text-gray-600">Mutlu Müşteri</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2">24/7</div>
+                <div className="text-gray-600">AI Destek</div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20">
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -537,42 +162,124 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Müşterilerimiz <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Ne Diyor?</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Neden OtoTakibim?
             </h2>
-            <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              Binlerce mutlu müşterimizin deneyimlerini keşfedin.
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Araç bakımınızı devrim niteliğinde özelliklerle yönetin
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          >
+            {[
+              {
+                icon: Brain,
+                title: "AI Destekli Teşhis",
+                description: "Yapay zeka ile araç sorunlarını önceden tespit edin ve önleyici bakım planlayın."
+              },
+              {
+                icon: BarChart3,
+                title: "Detaylı Analiz",
+                description: "Araç performansınızı takip edin, maliyet analizleri yapın ve optimize edin."
+              },
+              {
+                icon: Shield,
+                title: "Güvenli & Güvenilir",
+                description: "Verileriniz 256-bit SSL şifreleme ile korunur, %99.9 uptime garantisi."
+              },
+              {
+                icon: Smartphone,
+                title: "Mobil Uygulama",
+                description: "iOS ve Android uygulamaları ile her yerden araç durumunuzu kontrol edin."
+              },
+              {
+                icon: Clock,
+                title: "7/24 Destek",
+                description: "Uzman ekibimiz her zaman yanınızda, anında yardım alın."
+              },
+              {
+                icon: DollarSign,
+                title: "Maliyet Tasarrufu",
+                description: "Akıllı bakım planlaması ile yılda binlerce lira tasarruf edin."
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                variants={fadeInUp}
+                className="bg-white p-8 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300"
+              >
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
+                  <feature.icon className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Nasıl Çalışır?
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              3 basit adımda araç bakımınızı profesyonel seviyeye çıkarın
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
+            {[
+              {
+                step: "01",
+                title: "Araç Bilgilerini Girin",
+                description: "Araç marka, model, yıl ve mevcut durumu hakkında bilgileri girin.",
+                icon: Car
+              },
+              {
+                step: "02",
+                title: "AI Analiz Başlasın",
+                description: "Yapay zeka araç durumunuzu analiz eder ve bakım planı oluşturur.",
+                icon: Brain
+              },
+              {
+                step: "03",
+                title: "Takip ve Yönetim",
+                description: "Bakım takvimini takip edin, maliyetleri yönetin ve tasarruf edin.",
+                icon: TrendingUp
+              }
+            ].map((step, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
+                transition={{ duration: 0.8, delay: index * 0.2 }}
                 viewport={{ once: true }}
-                whileHover={{ y: -5 }}
-                className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-white/20 transition-all duration-300"
+                className="text-center"
               >
-                <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                  ))}
+                <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-6">
+                  {step.step}
                 </div>
-                <p className="text-white/80 mb-6 leading-relaxed">
-                  "{testimonial.content}"
-                </p>
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-2xl">
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-white">{testimonial.name}</div>
-                    <div className="text-white/60 text-sm">{testimonial.role}</div>
-                  </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-6">
+                  <step.icon className="w-6 h-6 text-blue-600" />
                 </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">{step.title}</h3>
+                <p className="text-gray-600">{step.description}</p>
               </motion.div>
             ))}
           </div>
@@ -580,113 +287,87 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-20 bg-blue-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="p-12 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-3xl"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Hemen <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Başlayın</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+              Hemen Başlayın, Farkı Hissedin
             </h2>
-            <p className="text-xl text-white/70 mb-8 max-w-2xl mx-auto">
-              14 gün ücretsiz deneme ile OtoTakibim'in gücünü keşfedin. 
-              Kredi kartı gerektirmez.
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              Binlerce müşteri gibi siz de araç bakım maliyetlerinizi azaltın ve güvenle sürün.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register">
-                <motion.button
-                  whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)" }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 flex items-center space-x-3"
-                >
-                  <Rocket className="w-5 h-5" />
-                  <span>Ücretsiz Deneme Başlat</span>
-                </motion.button>
-              </Link>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold rounded-xl hover:bg-white/20 transition-all duration-300 flex items-center space-x-3"
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link 
+                href="/register" 
+                className="bg-white text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-100 transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl"
               >
-                <MessageCircle className="w-5 h-5" />
-                <span>Demo Talep Et</span>
-              </motion.button>
+                <span>Ücretsiz Hesap Oluştur</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <Link 
+                href="/login" 
+                className="text-white border-2 border-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300"
+              >
+                Giriş Yap
+              </Link>
             </div>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 bg-slate-900/50 backdrop-blur-sm border-t border-white/10">
+      <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
-                OtoTakibim
-              </h3>
-              <p className="text-white/70 mb-4">
-                Türkiye'nin en gelişmiş AI destekli araç yönetim sistemi.
-              </p>
-              <div className="flex space-x-4">
-                <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
-                  <Globe className="w-5 h-5 text-white" />
-                </div>
-                <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
-                  <MessageCircle className="w-5 h-5 text-white" />
-                </div>
+              <div className="flex items-center space-x-3 mb-4">
+                <LogoLogin size="sm" />
+                <span className="text-xl font-bold">OtoTakibim</span>
               </div>
+              <p className="text-gray-400">
+                AI destekli araç bakım yönetimi ile geleceğe güvenle sürün.
+              </p>
             </div>
-            
             <div>
-              <h4 className="text-white font-semibold mb-4">Ürün</h4>
-              <ul className="space-y-2 text-white/70">
-                <li><a href="#" className="hover:text-white transition-colors">Özellikler</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Fiyatlandırma</a></li>
+              <h3 className="text-lg font-semibold mb-4">Ürün</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#features" className="hover:text-white transition-colors">Özellikler</a></li>
+                <li><a href="#pricing" className="hover:text-white transition-colors">Fiyatlandırma</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Entegrasyonlar</a></li>
               </ul>
             </div>
-            
             <div>
-              <h4 className="text-white font-semibold mb-4">Destek</h4>
-              <ul className="space-y-2 text-white/70">
+              <h3 className="text-lg font-semibold mb-4">Destek</h3>
+              <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Yardım Merkezi</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">İletişim</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Durum</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Güvenlik</a></li>
               </ul>
             </div>
-            
             <div>
-              <h4 className="text-white font-semibold mb-4">Şirket</h4>
-              <ul className="space-y-2 text-white/70">
-                <li><a href="#" className="hover:text-white transition-colors">Hakkımızda</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Kariyer</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Gizlilik</a></li>
-              </ul>
+              <h3 className="text-lg font-semibold mb-4">İletişim</h3>
+              <div className="space-y-2 text-gray-400">
+                <div className="flex items-center space-x-2">
+                  <Mail className="w-4 h-4" />
+                  <span>info@ototakibim.com</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4" />
+                  <span>+90 212 555 0123</span>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div className="border-t border-white/10 mt-8 pt-8 text-center text-white/70">
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
             <p>&copy; 2024 OtoTakibim. Tüm hakları saklıdır.</p>
           </div>
         </div>
       </footer>
-
-      {/* Floating Action Button */}
-      <FAB
-        icon={<Rocket className="w-6 h-6" />}
-        aria-label="Hızlı Başla"
-        onClick={() => {
-          logoAnalytics.trackLogoClick('quick_start');
-          window.location.href = '/register';
-        }}
-      />
     </div>
   );
 }

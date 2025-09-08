@@ -1,15 +1,20 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+
+// Provider'lar (bunlar server-side olabilir)
 import { AuthProvider } from '../contexts/AuthContext';
+import { TenantProvider } from '../contexts/TenantContext';
 import { AppointmentProvider } from '@/contexts/AppointmentContext';
 import { PaymentProvider } from '@/contexts/PaymentContext';
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
+import { UsageMonitoringProvider } from '@/contexts/UsageMonitoringContext';
 import { QueryProvider } from '@/providers/QueryProvider';
-import PWAInstaller from '@/components/PWAInstaller';
-import MobileLayout from '@/components/MobileLayout';
 import { PWAProvider } from '@/components/PWAProvider';
 import PerformanceMonitor from '@/components/PerformanceMonitor';
-import { preloadCriticalComponents } from '@/components/LazyComponents';
+
+// Client wrapper'ı import et
+import ClientWrapper from '@/components/ClientWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -77,9 +82,6 @@ export default function RootLayout({
     <html lang="tr">
       <head>
         <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#3b82f6" />
         <meta name="msapplication-TileColor" content="#3b82f6" />
@@ -108,32 +110,23 @@ export default function RootLayout({
         <PWAProvider>
           <QueryProvider>
             <AuthProvider>
-              <AppointmentProvider>
-                <PaymentProvider>
-                  <MobileLayout>
-                    {children}
-                  </MobileLayout>
-                  <PWAInstaller />
-                  <PerformanceMonitor />
-                </PaymentProvider>
-              </AppointmentProvider>
+              <TenantProvider>
+                <SubscriptionProvider>
+                  <UsageMonitoringProvider>
+                    <AppointmentProvider>
+                      <PaymentProvider>
+                        <ClientWrapper>
+                          {children}
+                        </ClientWrapper>
+                        <PerformanceMonitor />
+                      </PaymentProvider>
+                    </AppointmentProvider>
+                  </UsageMonitoringProvider>
+                </SubscriptionProvider>
+              </TenantProvider>
             </AuthProvider>
           </QueryProvider>
         </PWAProvider>
-        
-        {/* Critical component preloading */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Preload critical components after page load
-              window.addEventListener('load', function() {
-                setTimeout(function() {
-                  ${preloadCriticalComponents.toString()}();
-                }, 1000);
-              });
-            `,
-          }}
-        />
       </body>
     </html>
   );

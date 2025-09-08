@@ -1,3 +1,5 @@
+'use client';
+
 import { lazy, Suspense, ComponentType } from 'react';
 import { SkeletonCard, InlineLoading } from './LoadingStates';
 

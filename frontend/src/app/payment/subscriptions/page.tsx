@@ -107,7 +107,7 @@ export default function SubscriptionsPage() {
     }
   ];
 
-  const currentSubscription = paymentState.subscriptions[0]; // Assuming single subscription for now
+  const currentSubscription = paymentState.subscriptions?.[0]; // Assuming single subscription for now
 
   const handleUpgrade = async (planId: string) => {
     setIsProcessing(true);
@@ -446,14 +446,14 @@ export default function SubscriptionsPage() {
               </Link>
             </div>
             
-            {paymentState.invoices.length === 0 ? (
+            {!paymentState.invoices || paymentState.invoices.length === 0 ? (
               <div className="text-center py-8">
                 <Download className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">Henüz fatura bulunmuyor</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {paymentState.invoices.slice(0, 5).map((invoice, index) => (
+                {paymentState.invoices?.slice(0, 5).map((invoice, index) => (
                   <div key={invoice.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
                     <div className="flex items-center space-x-4">
                       <div className="p-2 bg-gray-100 rounded-lg">

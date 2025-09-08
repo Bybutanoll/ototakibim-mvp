@@ -1,8 +1,39 @@
 // Production-ready API service layer for OtoTakibim
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-// Base configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
+// Base configuration - Development için localhost, production için render
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : 'https://ototakibim-mvp.onrender.com/api');
+
+// Backend discovery for development
+const discoverBackend = async (): Promise<string> => {
+  if (process.env.NODE_ENV !== 'development') {
+    return API_BASE_URL;
+  }
+
+  const ports = [5000, 5001, 5002, 5003];
+  for (const port of ports) {
+    try {
+      const response = await fetch(`http://localhost:${port}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(1000)
+      });
+      if (response.ok) {
+        console.log(`✅ Backend bulundu: http://localhost:${port}`);
+        return `http://localhost:${port}/api`;
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+  
+  console.warn('⚠️ Backend bulunamadı! Varsayılan port kullanılıyor.');
+  return API_BASE_URL;
+};
+
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -12,6 +43,34 @@ const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Retry helper function
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Retry interceptor
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    
+    if (!config || !config.retry) {
+      config.retry = 0;
+    }
+    
+    if (config.retry < MAX_RETRIES && (
+      !error.response || 
+      error.response.status >= 500 || 
+      error.code === 'NETWORK_ERROR' ||
+      error.code === 'ECONNABORTED'
+    )) {
+      config.retry += 1;
+      await sleep(RETRY_DELAY * Math.pow(2, config.retry - 1));
+      return apiClient(config);
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // Request interceptor for authentication
 apiClient.interceptors.request.use(

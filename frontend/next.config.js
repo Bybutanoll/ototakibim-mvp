@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Netlify için static export
-  output: 'export',
-  trailingSlash: true,
-  skipTrailingSlashRedirect: true,
-  distDir: 'out',
+  // Next.js 15 uyumlu minimal konfigürasyon
+  reactStrictMode: true,
+  // swcMinify: true, // Next.js 15'te artık yok
+  
+  // Development için export mode kapatıldı
+  // output: 'export', // Next.js 15'te sorun yaratıyor
   
   eslint: {
     ignoreDuringBuilds: true,
@@ -13,14 +14,30 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
-  // Performance optimizations
+  // Performance optimizations - geçici olarak kapat
   experimental: {
-    optimizePackageImports: ['lucide-react', '@heroicons/react', 'framer-motion'],
+    optimizePackageImports: [],
     scrollRestoration: true,
   },
   
   // Bundle optimization
   webpack: (config, { dev, isServer }) => {
+    // Development'ta webpack optimizasyonlarını kapat
+    if (dev) {
+      config.optimization = {
+        ...config.optimization,
+        minimize: false,
+        splitChunks: false,
+      };
+    }
+    
+    // Module resolution düzelt
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+    };
+    
     // Production optimizations
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
@@ -111,12 +128,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://ototakibim-mvp.onrender.com https://www.google-analytics.com",
-              "frame-src 'none'",
+              "connect-src 'self' http://localhost:5000 http://localhost:5001 http://localhost:5002 http://localhost:5003 https://ototakibim-mvp.onrender.com https://www.google-analytics.com https://js.stripe.com https://api.stripe.com https://hooks.stripe.com",
+              "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -147,6 +164,26 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // CSS MIME type fix
+      {
+        source: '/_next/static/css/:path*',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/css; charset=utf-8',
+          },
+        ],
+      },
+      // JS MIME type fix
+      {
+        source: '/_next/static/js/:path*',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
           },
         ],
       },

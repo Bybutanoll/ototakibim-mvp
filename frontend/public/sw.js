@@ -87,7 +87,11 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Handle different types of requests
-  if (isStaticAsset(request)) {
+  if (isFaviconRequest(request)) {
+    event.respondWith(handleFaviconRequest(request));
+  } else if (isExternalScript(request)) {
+    event.respondWith(handleExternalScript(request));
+  } else if (isStaticAsset(request)) {
     event.respondWith(handleStaticAsset(request));
   } else if (isApiRequest(request)) {
     event.respondWith(handleApiRequest(request));
@@ -97,6 +101,79 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(handleOtherRequest(request));
   }
 });
+
+// Check if request is for favicon
+function isFaviconRequest(request) {
+  const url = new URL(request.url);
+  return url.pathname === '/favicon.ico' || url.pathname.endsWith('/favicon.ico');
+}
+
+// Handle favicon requests
+async function handleFaviconRequest(request) {
+  try {
+    // Önce cache'den kontrol et
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // Network'ten fetch etmeye çalış
+    try {
+      const networkResponse = await fetch(request);
+      if (networkResponse.ok) {
+        const cache = await caches.open(STATIC_CACHE);
+        cache.put(request, networkResponse.clone());
+      }
+      return networkResponse;
+    } catch (networkError) {
+      console.log('Service Worker: Network failed for favicon, using default');
+      
+      // Network başarısız, default favicon döndür
+      return new Response('', {
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          'Content-Type': 'image/x-icon'
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Service Worker: Failed to handle favicon request', error);
+    return new Response('', {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'Content-Type': 'image/x-icon'
+      }
+    });
+  }
+}
+
+// Check if request is for external scripts (Stripe, etc.)
+function isExternalScript(request) {
+  const url = new URL(request.url);
+  return (
+    url.hostname === 'js.stripe.com' ||
+    url.hostname === 'api.stripe.com' ||
+    url.hostname === 'hooks.stripe.com'
+  );
+}
+
+// Handle external script requests - bypass service worker
+async function handleExternalScript(request) {
+  try {
+    // External scripts için doğrudan network'ten fetch et
+    const response = await fetch(request);
+    return response;
+  } catch (error) {
+    console.log('Service Worker: External script fetch failed', error);
+    // External script başarısız olursa, browser'ın kendi handling'ine bırak
+    return new Response('External script not available', {
+      status: 503,
+      statusText: 'Service Unavailable'
+    });
+  }
+}
 
 // Check if request is for static assets
 function isStaticAsset(request) {
@@ -129,17 +206,35 @@ function isPageRequest(request) {
 // Handle static assets - cache first strategy
 async function handleStaticAsset(request) {
   try {
+    // Önce cache'den kontrol et
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       return cachedResponse;
     }
 
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, networkResponse.clone());
+    // Network'ten fetch etmeye çalış
+    try {
+      const networkResponse = await fetch(request);
+      if (networkResponse.ok) {
+        const cache = await caches.open(STATIC_CACHE);
+        cache.put(request, networkResponse.clone());
+      }
+      return networkResponse;
+    } catch (networkError) {
+      console.log('Service Worker: Network failed, trying cache for static asset');
+      
+      // Network başarısız, cache'de varsa onu döndür
+      const fallbackResponse = await caches.match(request);
+      if (fallbackResponse) {
+        return fallbackResponse;
+      }
+      
+      // Hiçbir yerde yoksa, offline sayfası döndür
+      return new Response('Offline - Static asset not available', {
+        status: 503,
+        statusText: 'Service Unavailable'
+      });
     }
-    return networkResponse;
   } catch (error) {
     console.error('Service Worker: Failed to handle static asset', error);
     return new Response('Offline - Static asset not available', {

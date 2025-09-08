@@ -24,7 +24,7 @@ const badgeSizes = {
   lg: 'px-3 py-1.5 text-base',
 };
 
-export const Badge: React.FC<BadgeProps> = ({
+const Badge: React.FC<BadgeProps> = ({
   variant = 'default',
   size = 'md',
   children,
@@ -43,3 +43,5 @@ export const Badge: React.FC<BadgeProps> = ({
     </span>
   );
 };
+
+export { Badge };

@@ -2,120 +2,64 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-
-// Types
-export interface PaymentMethod {
-  _id: string;
-  type: 'card' | 'bank_account' | 'wallet';
-  last4?: string;
-  brand?: string;
-  expiryMonth?: number;
-  expiryYear?: number;
-  isDefault: boolean;
-  isActive: boolean;
-}
-
-export interface Subscription {
-  _id: string;
-  userId: string;
-  planId: string;
-  planName: string;
-  planType: 'starter' | 'professional' | 'enterprise';
-  status: 'active' | 'cancelled' | 'past_due' | 'unpaid';
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  cancelAtPeriodEnd: boolean;
-  amount: number;
-  currency: string;
-  interval: 'monthly' | 'yearly';
-  nextBillingDate: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Invoice {
-  _id: string;
-  userId: string;
-  subscriptionId?: string;
-  amount: number;
-  currency: string;
-  status: 'draft' | 'open' | 'paid' | 'uncollectible' | 'void';
-  dueDate: string;
-  paidAt?: string;
-  items: InvoiceItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface InvoiceItem {
-  _id: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  amount: number;
-}
-
-export interface PaymentIntent {
-  _id: string;
-  amount: number;
-  currency: string;
-  status: 'requires_payment_method' | 'requires_confirmation' | 'requires_action' | 'processing' | 'requires_capture' | 'canceled' | 'succeeded';
-  clientSecret: string;
-  paymentMethodId?: string;
-  createdAt: string;
-}
+import { paymentService, PaymentMethod, Subscription, Invoice, Product, Price } from '../services/paymentService';
 
 export interface PaymentState {
+  customer: any | null;
+  subscription: Subscription | null;
   paymentMethods: PaymentMethod[];
-  subscriptions: Subscription[];
   invoices: Invoice[];
-  currentSubscription: Subscription | null;
+  products: Product[];
+  prices: Price[];
   isLoading: boolean;
   error: string | null;
 }
 
 export interface PaymentContextType {
   state: PaymentState;
-  createPaymentMethod: (paymentMethodData: any) => Promise<PaymentMethod>;
-  updatePaymentMethod: (id: string, data: Partial<PaymentMethod>) => Promise<PaymentMethod>;
-  deletePaymentMethod: (id: string) => Promise<void>;
-  setDefaultPaymentMethod: (id: string) => Promise<void>;
-  createSubscription: (planId: string, paymentMethodId: string) => Promise<Subscription>;
-  cancelSubscription: (subscriptionId: string) => Promise<void>;
-  updateSubscription: (subscriptionId: string, data: Partial<Subscription>) => Promise<Subscription>;
+  customer: any | null;
+  subscription: Subscription | null;
+  paymentMethods: PaymentMethod[];
+  invoices: Invoice[];
+  products: Product[];
+  prices: Price[];
+  createCustomer: (data: { email: string; name: string }) => Promise<void>;
+  createSubscription: (priceId: string, trialPeriodDays?: number) => Promise<void>;
+  updateSubscription: (data: { priceId?: string; quantity?: number }) => Promise<void>;
+  cancelSubscription: (immediately?: boolean) => Promise<void>;
   getPaymentMethods: () => Promise<void>;
-  getSubscriptions: () => Promise<void>;
-  getInvoices: () => Promise<void>;
-  createPaymentIntent: (amount: number, currency: string) => Promise<PaymentIntent>;
-  confirmPayment: (paymentIntentId: string, paymentMethodId: string) => Promise<void>;
+  createSetupIntent: () => Promise<{ clientSecret: string; id: string }>;
+  setDefaultPaymentMethod: (paymentMethodId: string) => Promise<void>;
+  deletePaymentMethod: (paymentMethodId: string) => Promise<void>;
+  getInvoices: (limit?: number) => Promise<void>;
+  getProducts: () => Promise<void>;
+  getPrices: () => Promise<void>;
   clearError: () => void;
 }
 
 // Action Types
 type PaymentAction =
   | { type: 'PAYMENT_START' }
-  | { type: 'PAYMENT_METHODS_LOAD_SUCCESS'; payload: PaymentMethod[] }
-  | { type: 'PAYMENT_METHOD_ADD'; payload: PaymentMethod }
-  | { type: 'PAYMENT_METHOD_UPDATE'; payload: PaymentMethod }
-  | { type: 'PAYMENT_METHOD_DELETE'; payload: string }
-  | { type: 'SUBSCRIPTIONS_LOAD_SUCCESS'; payload: Subscription[] }
-  | { type: 'SUBSCRIPTION_ADD'; payload: Subscription }
-  | { type: 'SUBSCRIPTION_UPDATE'; payload: Subscription }
-  | { type: 'INVOICES_LOAD_SUCCESS'; payload: Invoice[] }
+  | { type: 'PAYMENT_SUCCESS'; payload: any }
   | { type: 'PAYMENT_FAILURE'; payload: string }
+  | { type: 'SET_CUSTOMER'; payload: any }
+  | { type: 'SET_SUBSCRIPTION'; payload: Subscription }
+  | { type: 'SET_PAYMENT_METHODS'; payload: PaymentMethod[] }
+  | { type: 'SET_INVOICES'; payload: Invoice[] }
+  | { type: 'SET_PRODUCTS'; payload: Product[] }
+  | { type: 'SET_PRICES'; payload: Price[] }
   | { type: 'CLEAR_ERROR' }
   | { type: 'SET_LOADING'; payload: boolean };
 
 // Initial State
 const initialState: PaymentState = {
+  customer: null,
+  subscription: null,
   paymentMethods: [],
-  subscriptions: [],
   invoices: [],
-  currentSubscription: null,
-  isLoading: false,
+  products: [],
+  prices: [],
+  isLoading: true,
   error: null,
 };
 
@@ -128,66 +72,9 @@ function paymentReducer(state: PaymentState, action: PaymentAction): PaymentStat
         isLoading: true,
         error: null,
       };
-    case 'PAYMENT_METHODS_LOAD_SUCCESS':
+    case 'PAYMENT_SUCCESS':
       return {
         ...state,
-        paymentMethods: action.payload,
-        isLoading: false,
-        error: null,
-      };
-    case 'PAYMENT_METHOD_ADD':
-      return {
-        ...state,
-        paymentMethods: [...state.paymentMethods, action.payload],
-        isLoading: false,
-        error: null,
-      };
-    case 'PAYMENT_METHOD_UPDATE':
-      return {
-        ...state,
-        paymentMethods: state.paymentMethods.map(pm => 
-          pm._id === action.payload._id ? action.payload : pm
-        ),
-        isLoading: false,
-        error: null,
-      };
-    case 'PAYMENT_METHOD_DELETE':
-      return {
-        ...state,
-        paymentMethods: state.paymentMethods.filter(pm => pm._id !== action.payload),
-        isLoading: false,
-        error: null,
-      };
-    case 'SUBSCRIPTIONS_LOAD_SUCCESS':
-      return {
-        ...state,
-        subscriptions: action.payload,
-        currentSubscription: action.payload.find(sub => sub.status === 'active') || null,
-        isLoading: false,
-        error: null,
-      };
-    case 'SUBSCRIPTION_ADD':
-      return {
-        ...state,
-        subscriptions: [...state.subscriptions, action.payload],
-        currentSubscription: action.payload.status === 'active' ? action.payload : state.currentSubscription,
-        isLoading: false,
-        error: null,
-      };
-    case 'SUBSCRIPTION_UPDATE':
-      return {
-        ...state,
-        subscriptions: state.subscriptions.map(sub => 
-          sub._id === action.payload._id ? action.payload : sub
-        ),
-        currentSubscription: action.payload._id === state.currentSubscription?._id ? action.payload : state.currentSubscription,
-        isLoading: false,
-        error: null,
-      };
-    case 'INVOICES_LOAD_SUCCESS':
-      return {
-        ...state,
-        invoices: action.payload,
         isLoading: false,
         error: null,
       };
@@ -196,6 +83,42 @@ function paymentReducer(state: PaymentState, action: PaymentAction): PaymentStat
         ...state,
         isLoading: false,
         error: action.payload,
+      };
+    case 'SET_CUSTOMER':
+      return {
+        ...state,
+        customer: action.payload,
+        error: null,
+      };
+    case 'SET_SUBSCRIPTION':
+      return {
+        ...state,
+        subscription: action.payload,
+        error: null,
+      };
+    case 'SET_PAYMENT_METHODS':
+      return {
+        ...state,
+        paymentMethods: action.payload,
+        error: null,
+      };
+    case 'SET_INVOICES':
+      return {
+        ...state,
+        invoices: action.payload,
+        error: null,
+      };
+    case 'SET_PRODUCTS':
+      return {
+        ...state,
+        products: action.payload,
+        error: null,
+      };
+    case 'SET_PRICES':
+      return {
+        ...state,
+        prices: action.payload,
+        error: null,
       };
     case 'CLEAR_ERROR':
       return {
@@ -212,509 +135,271 @@ function paymentReducer(state: PaymentState, action: PaymentAction): PaymentStat
   }
 }
 
-// Create Context
+// Context
 const PaymentContext = createContext<PaymentContextType | undefined>(undefined);
 
-// API Base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ototakibim-mvp.onrender.com/api';
-
-// Payment Provider Component
-export function PaymentProvider({ children }: { children: ReactNode }) {
+// Provider
+export const PaymentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(paymentReducer, initialState);
-  const { state: authState } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
-  // Load payment data on mount
+  // Load payment data when user is authenticated
   useEffect(() => {
-    if (authState.isAuthenticated) {
-      getPaymentMethods();
-      getSubscriptions();
-      getInvoices();
-    }
-  }, [authState.isAuthenticated]);
+    const loadPaymentData = async () => {
+      if (!isAuthenticated || !user) {
+        dispatch({ type: 'SET_LOADING', payload: false });
+        return;
+      }
 
-  // Create payment method
-  const createPaymentMethod = async (paymentMethodData: any): Promise<PaymentMethod> => {
+      try {
+        dispatch({ type: 'PAYMENT_START' });
+        
+        // Load customer, subscription, payment methods, and invoices in parallel
+        const [customerData, subscriptionData, paymentMethodsData, invoicesData, productsData, pricesData] = await Promise.allSettled([
+          paymentService.getCustomer(),
+          paymentService.getSubscription(),
+          paymentService.getPaymentMethods(),
+          paymentService.getInvoices(5),
+          paymentService.getProducts(),
+          paymentService.getPrices()
+        ]);
+
+        // Handle customer data
+        if (customerData.status === 'fulfilled') {
+          dispatch({ type: 'SET_CUSTOMER', payload: customerData.value });
+        }
+
+        // Handle subscription data
+        if (subscriptionData.status === 'fulfilled') {
+          dispatch({ type: 'SET_SUBSCRIPTION', payload: subscriptionData.value });
+        }
+
+        // Handle payment methods data
+        if (paymentMethodsData.status === 'fulfilled') {
+          dispatch({ type: 'SET_PAYMENT_METHODS', payload: paymentMethodsData.value });
+        }
+
+        // Handle invoices data
+        if (invoicesData.status === 'fulfilled') {
+          dispatch({ type: 'SET_INVOICES', payload: invoicesData.value });
+        }
+
+        // Handle products data
+        if (productsData.status === 'fulfilled') {
+          dispatch({ type: 'SET_PRODUCTS', payload: productsData.value });
+        }
+
+        // Handle prices data
+        if (pricesData.status === 'fulfilled') {
+          dispatch({ type: 'SET_PRICES', payload: pricesData.value });
+        }
+
+        dispatch({ type: 'PAYMENT_SUCCESS', payload: null });
+      } catch (error) {
+        console.error('Payment data loading error:', error);
+        dispatch({ 
+          type: 'PAYMENT_FAILURE', 
+          payload: error instanceof Error ? error.message : 'Ödeme verileri yüklenirken hata oluştu' 
+        });
+      }
+    };
+
+    loadPaymentData();
+  }, [isAuthenticated, user]);
+
+  const createCustomer = async (data: { email: string; name: string }) => {
     try {
       dispatch({ type: 'PAYMENT_START' });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/methods`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentMethodData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Payment method creation failed');
-      }
-
-      dispatch({ type: 'PAYMENT_METHOD_ADD', payload: data });
-      return data;
+      
+      const customer = await paymentService.createCustomer(data);
+      dispatch({ type: 'SET_CUSTOMER', payload: customer });
+      dispatch({ type: 'PAYMENT_SUCCESS', payload: customer });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment method creation failed';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
+      console.error('Create customer error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Müşteri oluşturulurken hata oluştu' 
+      });
+    }
+  };
+
+  const createSubscription = async (priceId: string, trialPeriodDays?: number) => {
+    try {
+      dispatch({ type: 'PAYMENT_START' });
+      
+      const subscription = await paymentService.createSubscription({ priceId, trialPeriodDays });
+      dispatch({ type: 'SET_SUBSCRIPTION', payload: subscription });
+      dispatch({ type: 'PAYMENT_SUCCESS', payload: subscription });
+    } catch (error) {
+      console.error('Create subscription error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Abonelik oluşturulurken hata oluştu' 
+      });
+    }
+  };
+
+  const updateSubscription = async (data: { priceId?: string; quantity?: number }) => {
+    try {
+      dispatch({ type: 'PAYMENT_START' });
+      
+      const subscription = await paymentService.updateSubscription(data);
+      dispatch({ type: 'SET_SUBSCRIPTION', payload: subscription });
+      dispatch({ type: 'PAYMENT_SUCCESS', payload: subscription });
+    } catch (error) {
+      console.error('Update subscription error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Abonelik güncellenirken hata oluştu' 
+      });
+    }
+  };
+
+  const cancelSubscription = async (immediately: boolean = false) => {
+    try {
+      dispatch({ type: 'PAYMENT_START' });
+      
+      const subscription = await paymentService.cancelSubscription(immediately);
+      dispatch({ type: 'SET_SUBSCRIPTION', payload: subscription });
+      dispatch({ type: 'PAYMENT_SUCCESS', payload: subscription });
+    } catch (error) {
+      console.error('Cancel subscription error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Abonelik iptal edilirken hata oluştu' 
+      });
+    }
+  };
+
+  const getPaymentMethods = async () => {
+    try {
+      const paymentMethods = await paymentService.getPaymentMethods();
+      dispatch({ type: 'SET_PAYMENT_METHODS', payload: paymentMethods });
+    } catch (error) {
+      console.error('Get payment methods error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Ödeme yöntemleri alınırken hata oluştu' 
+      });
+    }
+  };
+
+  const createSetupIntent = async () => {
+    try {
+      return await paymentService.createSetupIntent();
+    } catch (error) {
+      console.error('Create setup intent error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Setup intent oluşturulurken hata oluştu' 
+      });
       throw error;
     }
   };
 
-  // Update payment method
-  const updatePaymentMethod = async (id: string, data: Partial<PaymentMethod>): Promise<PaymentMethod> => {
+  const setDefaultPaymentMethod = async (paymentMethodId: string) => {
     try {
-      dispatch({ type: 'PAYMENT_START' });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/methods/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const updatedData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(updatedData.message || 'Payment method update failed');
-      }
-
-      dispatch({ type: 'PAYMENT_METHOD_UPDATE', payload: updatedData });
-      return updatedData;
+      await paymentService.setDefaultPaymentMethod(paymentMethodId);
+      await getPaymentMethods(); // Refresh payment methods
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment method update failed';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-      throw error;
+      console.error('Set default payment method error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Varsayılan ödeme yöntemi ayarlanırken hata oluştu' 
+      });
     }
   };
 
-  // Delete payment method
-  const deletePaymentMethod = async (id: string): Promise<void> => {
+  const deletePaymentMethod = async (paymentMethodId: string) => {
     try {
-      dispatch({ type: 'PAYMENT_START' });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/methods/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Payment method deletion failed');
-      }
-
-      dispatch({ type: 'PAYMENT_METHOD_DELETE', payload: id });
+      await paymentService.deletePaymentMethod(paymentMethodId);
+      await getPaymentMethods(); // Refresh payment methods
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment method deletion failed';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-      throw error;
+      console.error('Delete payment method error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Ödeme yöntemi silinirken hata oluştu' 
+      });
     }
   };
 
-  // Set default payment method
-  const setDefaultPaymentMethod = async (id: string): Promise<void> => {
+  const getInvoices = async (limit: number = 10) => {
     try {
-      dispatch({ type: 'PAYMENT_START' });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/methods/${id}/default`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Setting default payment method failed');
-      }
-
-      // Update local state
-      const updatedMethods = state.paymentMethods.map(pm => ({
-        ...pm,
-        isDefault: pm._id === id
-      }));
-      dispatch({ type: 'PAYMENT_METHODS_LOAD_SUCCESS', payload: updatedMethods });
+      const invoices = await paymentService.getInvoices(limit);
+      dispatch({ type: 'SET_INVOICES', payload: invoices });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Setting default payment method failed';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-      throw error;
+      console.error('Get invoices error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Faturalar alınırken hata oluştu' 
+      });
     }
   };
 
-  // Create subscription
-  const createSubscription = async (planId: string, paymentMethodId: string): Promise<Subscription> => {
+  const getProducts = async () => {
     try {
-      dispatch({ type: 'PAYMENT_START' });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/subscriptions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ planId, paymentMethodId }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Subscription creation failed');
-      }
-
-      dispatch({ type: 'SUBSCRIPTION_ADD', payload: data });
-      return data;
+      const products = await paymentService.getProducts();
+      dispatch({ type: 'SET_PRODUCTS', payload: products });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Subscription creation failed';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-      throw error;
+      console.error('Get products error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Ürünler alınırken hata oluştu' 
+      });
     }
   };
 
-  // Cancel subscription
-  const cancelSubscription = async (subscriptionId: string): Promise<void> => {
+  const getPrices = async () => {
     try {
-      dispatch({ type: 'PAYMENT_START' });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/subscriptions/${subscriptionId}/cancel`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Subscription cancellation failed');
-      }
-
-      // Update local state
-      const updatedSubscription = state.subscriptions.find(sub => sub._id === subscriptionId);
-      if (updatedSubscription) {
-        const cancelledSubscription = { ...updatedSubscription, status: 'cancelled' as const };
-        dispatch({ type: 'SUBSCRIPTION_UPDATE', payload: cancelledSubscription });
-      }
+      const prices = await paymentService.getPrices();
+      dispatch({ type: 'SET_PRICES', payload: prices });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Subscription cancellation failed';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-      throw error;
+      console.error('Get prices error:', error);
+      dispatch({ 
+        type: 'PAYMENT_FAILURE', 
+        payload: error instanceof Error ? error.message : 'Fiyatlar alınırken hata oluştu' 
+      });
     }
   };
 
-  // Update subscription
-  const updateSubscription = async (subscriptionId: string, data: Partial<Subscription>): Promise<Subscription> => {
-    try {
-      dispatch({ type: 'PAYMENT_START' });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/subscriptions/${subscriptionId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const updatedData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(updatedData.message || 'Subscription update failed');
-      }
-
-      dispatch({ type: 'SUBSCRIPTION_UPDATE', payload: updatedData });
-      return updatedData;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Subscription update failed';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-      throw error;
-    }
-  };
-
-  // Get payment methods
-  const getPaymentMethods = async (): Promise<void> => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/methods`, {
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch payment methods');
-      }
-
-      const paymentMethods = await response.json();
-      dispatch({ type: 'PAYMENT_METHODS_LOAD_SUCCESS', payload: paymentMethods });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch payment methods';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-    }
-  };
-
-  // Get subscriptions
-  const getSubscriptions = async (): Promise<void> => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/subscriptions`, {
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch subscriptions');
-      }
-
-      const subscriptions = await response.json();
-      dispatch({ type: 'SUBSCRIPTIONS_LOAD_SUCCESS', payload: subscriptions });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch subscriptions';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-    }
-  };
-
-  // Get invoices
-  const getInvoices = async (): Promise<void> => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/invoices`, {
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch invoices');
-      }
-
-      const invoices = await response.json();
-      dispatch({ type: 'INVOICES_LOAD_SUCCESS', payload: invoices });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch invoices';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-    }
-  };
-
-  // Create payment intent
-  const createPaymentIntent = async (amount: number, currency: string): Promise<PaymentIntent> => {
-    try {
-      dispatch({ type: 'PAYMENT_START' });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/intents`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ amount, currency }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Payment intent creation failed');
-      }
-
-      return data;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment intent creation failed';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-      throw error;
-    }
-  };
-
-  // Confirm payment
-  const confirmPayment = async (paymentIntentId: string, paymentMethodId: string): Promise<void> => {
-    try {
-      dispatch({ type: 'PAYMENT_START' });
-
-      if (!authState.token) {
-        throw new Error('No authentication token');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/payments/intents/${paymentIntentId}/confirm`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ paymentMethodId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Payment confirmation failed');
-      }
-
-      // Refresh payment data
-      await getPaymentMethods();
-      await getInvoices();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment confirmation failed';
-      dispatch({ type: 'PAYMENT_FAILURE', payload: errorMessage });
-      throw error;
-    }
-  };
-
-  // Clear error
-  const clearError = (): void => {
+  const clearError = () => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
   const value: PaymentContextType = {
     state,
-    createPaymentMethod,
-    updatePaymentMethod,
-    deletePaymentMethod,
-    setDefaultPaymentMethod,
+    customer: state.customer,
+    subscription: state.subscription,
+    paymentMethods: state.paymentMethods,
+    invoices: state.invoices,
+    products: state.products,
+    prices: state.prices,
+    createCustomer,
     createSubscription,
-    cancelSubscription,
     updateSubscription,
+    cancelSubscription,
     getPaymentMethods,
-    getSubscriptions,
+    createSetupIntent,
+    setDefaultPaymentMethod,
+    deletePaymentMethod,
     getInvoices,
-    createPaymentIntent,
-    confirmPayment,
+    getProducts,
+    getPrices,
     clearError,
   };
 
-  return <PaymentContext.Provider value={value}>{children}</PaymentContext.Provider>;
-}
+  return (
+    <PaymentContext.Provider value={value}>
+      {children}
+    </PaymentContext.Provider>
+  );
+};
 
-// Custom hook to use payment context
-export function usePayment(): PaymentContextType {
+// Hook
+export const usePayment = (): PaymentContextType => {
   const context = useContext(PaymentContext);
   if (context === undefined) {
     throw new Error('usePayment must be used within a PaymentProvider');
   }
   return context;
-}
-
-// Utility functions
-export const formatCurrency = (amount: number, currency: string = 'TRY'): string => {
-  return new Intl.NumberFormat('tr-TR', {
-    style: 'currency',
-    currency: currency,
-  }).format(amount / 100); // Convert from cents
-};
-
-export const getSubscriptionStatusColor = (status: string): string => {
-  switch (status) {
-    case 'active':
-      return 'text-green-600 bg-green-100';
-    case 'cancelled':
-      return 'text-red-600 bg-red-100';
-    case 'past_due':
-      return 'text-yellow-600 bg-yellow-100';
-    case 'unpaid':
-      return 'text-orange-600 bg-orange-100';
-    default:
-      return 'text-gray-600 bg-gray-100';
-  }
-};
-
-export const getSubscriptionStatusText = (status: string): string => {
-  switch (status) {
-    case 'active':
-      return 'Aktif';
-    case 'cancelled':
-      return 'İptal Edildi';
-    case 'past_due':
-      return 'Gecikmiş';
-    case 'unpaid':
-      return 'Ödenmemiş';
-    default:
-      return 'Bilinmiyor';
-  }
-};
-
-export const getInvoiceStatusColor = (status: string): string => {
-  switch (status) {
-    case 'paid':
-      return 'text-green-600 bg-green-100';
-    case 'open':
-      return 'text-blue-600 bg-blue-100';
-    case 'draft':
-      return 'text-gray-600 bg-gray-100';
-    case 'uncollectible':
-      return 'text-red-600 bg-red-100';
-    case 'void':
-      return 'text-gray-600 bg-gray-100';
-    default:
-      return 'text-gray-600 bg-gray-100';
-  }
-};
-
-export const getInvoiceStatusText = (status: string): string => {
-  switch (status) {
-    case 'paid':
-      return 'Ödendi';
-    case 'open':
-      return 'Açık';
-    case 'draft':
-      return 'Taslak';
-    case 'uncollectible':
-      return 'Tahsil Edilemez';
-    case 'void':
-      return 'Geçersiz';
-    default:
-      return 'Bilinmiyor';
-  }
 };

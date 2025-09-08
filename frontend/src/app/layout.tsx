@@ -110,15 +110,32 @@ export default function RootLayout({
         {/* Portal root for modals, dropdowns, etc. */}
         <div id="portal-root" className="z-modal" />
         
-        {/* Main app structure */}
-        <div className="min-h-screen bg-gray-50">
-          <ClientWrapper>
-            {children}
-          </ClientWrapper>
-        </div>
-        
-        {/* Performance monitoring */}
-        <PerformanceMonitor />
+        {/* Providers */}
+        <AuthProvider>
+          <TenantProvider>
+            <AppointmentProvider>
+              <PaymentProvider>
+                <SubscriptionProvider>
+                  <UsageMonitoringProvider>
+                    <QueryProvider>
+                      <PWAProvider>
+                        {/* Main app structure */}
+                        <div className="min-h-screen bg-gray-50">
+                          <ClientWrapper>
+                            {children}
+                          </ClientWrapper>
+                        </div>
+                        
+                        {/* Performance monitoring */}
+                        <PerformanceMonitor />
+                      </PWAProvider>
+                    </QueryProvider>
+                  </UsageMonitoringProvider>
+                </SubscriptionProvider>
+              </PaymentProvider>
+            </AppointmentProvider>
+          </TenantProvider>
+        </AuthProvider>
       </body>
     </html>
   );

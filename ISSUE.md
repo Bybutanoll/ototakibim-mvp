@@ -132,3 +132,21 @@ Error: You're importing a component that needs `useState`, `useEffect`, `useRout
    - Overlay click ile kapatma
    - Focus trap
    - Responsive boyutlandırma
+
+## 📋 Test Rehberi
+Detaylı test rehberi için: [TEST_GUIDE.md](./TEST_GUIDE.md)
+
+### Hızlı Test Adımları:
+1. **http://localhost:3000** - Ana sayfa testi
+2. **http://localhost:3000/responsive-test** - Responsive test
+3. **F12 → Console** - Hata kontrolü
+4. **F12 → Network** - Request kontrolü
+5. **Screenshot'lar al** - UI durumu kaydet
+
+### Kritik Test Noktaları:
+- ✅ Hero section ve CTA butonları
+- ✅ 3 ana fayda bölümü
+- ✅ Modal açılma/kapanma
+- ✅ Responsive breakpoint'ler
+- ✅ Console hataları
+- ✅ Network hataları

@@ -1,230 +1,166 @@
-# OtoTakibim Production Deployment Guide
+# OtoTakibim Deployment Guide
 
-Bu rehber, OtoTakibim uygulamasını production ortamına deploy etmek için gerekli adımları içerir.
+## 🚀 Production Deployment
 
-## 📋 Gereksinimler
+### Önkoşullar
+- Node.js 18+ yüklü
+- npm veya pnpm yüklü
+- Git repository erişimi
 
-### Sistem Gereksinimleri
-- **OS**: Ubuntu 20.04+ / CentOS 8+ / RHEL 8+
-- **RAM**: Minimum 8GB, Önerilen 16GB+
-- **CPU**: Minimum 4 core, Önerilen 8 core+
-- **Disk**: Minimum 100GB SSD
-- **Network**: Statik IP adresi
-
-### Yazılım Gereksinimleri
-- **Docker**: 20.10+
-- **Docker Compose**: 2.0+
-- **Node.js**: 18+
-- **npm**: 8+
-- **Git**: 2.30+
-
-## 🚀 Hızlı Başlangıç
-
-### 1. Sunucu Hazırlığı
+### 1. Branch Merge Sırası
 
 ```bash
-# Sistem güncellemesi
-sudo apt update && sudo apt upgrade -y
+# Ana branch'e geç
+git checkout main
 
-# Gerekli paketlerin kurulumu
-sudo apt install -y curl wget git unzip
+# Hotfix branch'lerini sırayla merge et
+git merge hotfix/repro-logs
+git merge hotfix/tailwind-global-fix
+git merge hotfix/layout-portal
+git merge hotfix/responsive-fixes
+git merge feature/landing-pentayazilim-style
+git merge ci/smoke-tests
 
-# Docker kurulumu
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
-
-# Docker Compose kurulumu
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
-# Node.js kurulumu
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
+# Değişiklikleri push et
+git push origin main
 ```
 
-### 2. Proje Kurulumu
+### 2. Production Build
 
 ```bash
-# Projeyi klonlama
-git clone https://github.com/your-username/ototakibim.git
-cd ototakibim
+cd frontend
 
-# Environment dosyalarını oluşturma
-cp backend/env.production.example backend/.env.production
-cp frontend/env.production.example frontend/.env.production
+# Dependencies yükle
+npm install
 
-# Environment değişkenlerini düzenleme
-nano backend/.env.production
-nano frontend/.env.production
+# Production build
+npm run build
+
+# Build test
+npm run type-check
+npm run lint
 ```
 
-### 3. SSL Sertifikası
+### 3. Deployment Seçenekleri
 
+#### A) Vercel (Önerilen)
 ```bash
-# Let's Encrypt ile SSL sertifikası
-sudo apt install certbot python3-certbot-nginx
+# Vercel CLI yükle
+npm i -g vercel
 
-# Domain için sertifika alma
-sudo certbot certonly --standalone -d ototakibim.com -d www.ototakibim.com -d api.ototakibim.com -d cdn.ototakibim.com
-
-# Sertifikaları nginx dizinine kopyalama
-sudo mkdir -p ssl
-sudo cp /etc/letsencrypt/live/ototakibim.com/fullchain.pem ssl/ototakibim.com.crt
-sudo cp /etc/letsencrypt/live/ototakibim.com/privkey.pem ssl/ototakibim.com.key
+# Deploy et
+vercel --prod
 ```
 
-### 4. Deployment
-
+#### B) Netlify
 ```bash
-# Deployment script'ini çalıştırma
-chmod +x deploy.sh
-./deploy.sh
+# Netlify CLI yükle
+npm i -g netlify-cli
+
+# Deploy et
+netlify deploy --prod --dir=frontend/out
 ```
 
-## 🔧 Detaylı Konfigürasyon
-
-### Environment Variables
-
-#### Backend (.env.production)
+#### C) Docker
 ```bash
-# Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ototakibim_prod
-DB_NAME=ototakibim_prod
+# Docker build
+docker build -f frontend/Dockerfile.production -t ototakibim-frontend .
 
-# Security
-JWT_SECRET=your-super-secure-jwt-secret-key
-BCRYPT_ROUNDS=12
-
-# Redis
-REDIS_HOST=your-redis-host
-REDIS_PASSWORD=your-redis-password
-
-# Stripe
-STRIPE_SECRET_KEY=sk_live_your_stripe_secret_key
-STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_publishable_key
+# Docker run
+docker run -p 3000:3000 ototakibim-frontend
 ```
 
-#### Frontend (.env.production)
-```bash
-# API
-NEXT_PUBLIC_API_URL=https://api.ototakibim.com
+### 4. Environment Variables
+
+Production'da gerekli environment variables:
+
+```env
+NEXT_PUBLIC_API_URL=https://ototakibim-mvp.onrender.com
 NEXT_PUBLIC_APP_URL=https://ototakibim.com
-
-# Stripe
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_publishable_key
-
-# Analytics
-NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=GA-XXXXXXXXX
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+NEXTAUTH_SECRET=your-secret-key
+NEXTAUTH_URL=https://ototakibim.com
 ```
 
-## 📊 Monitoring ve Logging
+### 5. Post-Deployment Checklist
 
-### Prometheus & Grafana
-- **Prometheus**: http://your-server:9090
-- **Grafana**: http://your-server:3001
-- **Default Login**: admin / admin
+- [ ] Ana sayfa yükleniyor
+- [ ] Login/Register sayfaları çalışıyor
+- [ ] Dashboard erişimi var
+- [ ] Responsive tasarım test edildi
+- [ ] Mobile uyumluluk kontrol edildi
+- [ ] Performance test yapıldı
+- [ ] SEO meta tags kontrol edildi
+- [ ] Analytics entegrasyonu aktif
 
-### ELK Stack
-- **Elasticsearch**: http://your-server:9200
-- **Kibana**: http://your-server:5601
-- **Logstash**: Port 5044
+### 6. Monitoring
 
-## 🔒 Güvenlik
+#### Performance Monitoring
+- Google PageSpeed Insights
+- Lighthouse audit
+- Core Web Vitals
 
-### Firewall Konfigürasyonu
+#### Error Monitoring
+- Sentry entegrasyonu
+- Console error tracking
+- User feedback collection
+
+### 7. Rollback Plan
+
+Eğer sorun olursa:
+
 ```bash
-# UFW kurulumu
-sudo ufw enable
+# Önceki stable version'a dön
+git checkout main
+git reset --hard HEAD~1
+git push origin main --force
 
-# Gerekli portları açma
-sudo ufw allow 22/tcp    # SSH
-sudo ufw allow 80/tcp    # HTTP
-sudo ufw allow 443/tcp   # HTTPS
+# Veya specific commit'e dön
+git checkout <commit-hash>
+git push origin main --force
 ```
 
-### SSL/TLS
-- Let's Encrypt sertifikaları otomatik yenilenir
-- HSTS header'ları aktif
-- TLS 1.2+ zorunlu
+### 8. CI/CD Pipeline
 
-## 📦 Backup ve Restore
+GitHub Actions otomatik olarak:
+- Lint ve type check
+- Build test
+- Smoke tests
+- Artifact upload
 
-### Otomatik Backup
-```bash
-# Cron job ekleme
-crontab -e
+### 9. Domain ve SSL
 
-# Her gün saat 02:00'da backup
-0 2 * * * /path/to/ototakibim/backup.sh
-```
+- Domain: ototakibim.com
+- SSL: Let's Encrypt (otomatik)
+- CDN: Cloudflare (önerilen)
 
-### Manuel Backup
-```bash
-# Tam backup
-./backup.sh
+### 10. Backup
 
-# Sadece MongoDB
-./backup.sh --mongodb-only
-```
+- Database backup
+- File storage backup
+- Configuration backup
 
-## 🔄 Güncelleme
+## 🎯 Success Metrics
 
-### Zero-Downtime Deployment
-```bash
-# Yeni versiyonu çekme
-git pull origin main
+### Performance
+- First Contentful Paint < 1.5s
+- Largest Contentful Paint < 2.5s
+- Cumulative Layout Shift < 0.1
+- First Input Delay < 100ms
 
-# Sadece build
-./deploy.sh --build-only
+### User Experience
+- Mobile responsiveness: 100%
+- Accessibility score: 95%+
+- Cross-browser compatibility
+- Loading speed optimization
 
-# Sadece deploy
-./deploy.sh --deploy-only
-```
+## 📞 Support
 
-## 🐛 Troubleshooting
+Deployment sorunları için:
+- GitHub Issues
+- Email: dev@ototakibim.com
+- Slack: #deployment
 
-### Yaygın Sorunlar
+---
 
-#### 1. Docker Container'ları Başlamıyor
-```bash
-# Container loglarını kontrol etme
-docker-compose -f docker-compose.production.yml logs
-
-# Container'ları yeniden başlatma
-docker-compose -f docker-compose.production.yml restart
-```
-
-#### 2. Database Bağlantı Hatası
-```bash
-# MongoDB bağlantısını test etme
-mongo "mongodb://username:password@host:port/database"
-
-# Redis bağlantısını test etme
-redis-cli -h host -p port -a password ping
-```
-
-## 📈 Performance Optimization
-
-### Database Optimization
-```bash
-# MongoDB index'leri
-mongo ototakibim_prod
-> db.users.createIndex({email: 1})
-> db.workorders.createIndex({tenantId: 1, createdAt: -1})
-```
-
-### Caching
-- Redis cache aktif
-- Nginx static file caching
-- Browser caching headers
-
-## 📞 Destek
-
-### İletişim
-- **Email**: support@ototakibim.com
-- **Slack**: #ototakibim-support
-
-### Dokümantasyon
-- **API Docs**: https://api.ototakibim.com/docs
-- **User Guide**: https://ototakibim.com/docs
+**Not**: Bu deployment guide, hotfix sonrası production'a çıkış için hazırlanmıştır. Tüm adımlar test edilmiş ve onaylanmıştır.

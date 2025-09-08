@@ -161,6 +161,7 @@ Backend API: http://localhost:5000
 - **[Kullanıcı Kılavuzu](./USER_GUIDE.md)**: Kullanıcı rehberi
 - **[Geliştirici Rehberi](./DEVELOPER_GUIDE.md)**: Geliştirme rehberi
 - **[Deployment Rehberi](./DEPLOYMENT_GUIDE.md)**: Production deployment
+- **[Hotfix Özeti](./HOTFIX_SUMMARY.md)**: UI düzeltmeleri ve modern tasarım
 
 ## 🧪 Test
 

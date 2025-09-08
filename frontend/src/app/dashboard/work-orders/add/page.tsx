@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../contexts/AuthContext';
+// import { useAuth } from '../../../../contexts/AuthContext';
 import {
   ArrowLeft,
   Wrench,
@@ -50,7 +50,8 @@ interface Part {
 
 export default function AddWorkOrderPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  // const { user } = useAuth();
+  const user = { name: 'Demo User', email: 'demo@example.com' };
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',

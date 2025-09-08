@@ -1,9 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useAuth } from '../../contexts/AuthContext';
 import { Eye, EyeOff, Mail, Lock, Car, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { LogoLogin } from '@/components/ui/Logo';
@@ -17,22 +15,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const { login, state, clearError } = useAuth();
   const router = useRouter();
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (state.isAuthenticated) {
-      router.push('/dashboard');
-    }
-  }, [state.isAuthenticated, router]);
-
-  // Clear errors when auth state changes
-  useEffect(() => {
-    if (state.error) {
-      setErrors({ auth: state.error });
-    }
-  }, [state.error]);
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -61,13 +44,14 @@ export default function LoginPage() {
     }
 
     setIsSubmitting(true);
-    clearError();
 
     try {
-      await login(formData);
+      // Simulate login - redirect to dashboard
+      console.log('Login attempt:', formData);
+      router.push('/dashboard');
     } catch (error) {
-      // Error is handled by the auth context
       console.error('Login error:', error);
+      setErrors({ general: 'Giriş yapılırken bir hata oluştu' });
     } finally {
       setIsSubmitting(false);
     }
@@ -87,40 +71,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          animate={{ 
-            y: [0, -20, 0],
-            rotate: [0, 5, 0]
-          }}
-          transition={{ 
-            duration: 6, 
-            repeat: Infinity, 
-            ease: "easeInOut" 
-          }}
-          className="absolute top-20 left-10 w-20 h-20 bg-blue-500/20 rounded-full blur-xl"
-        />
-        <motion.div
-          animate={{ 
-            y: [0, 20, 0],
-            rotate: [0, -5, 0]
-          }}
-          transition={{ 
-            duration: 8, 
-            repeat: Infinity, 
-            ease: "easeInOut" 
-          }}
-          className="absolute bottom-20 right-10 w-32 h-32 bg-purple-500/20 rounded-full blur-xl"
-        />
+        <div className="absolute top-20 left-10 w-20 h-20 bg-blue-500/20 rounded-full blur-xl" />
+        <div className="absolute bottom-20 right-10 w-32 h-32 bg-purple-500/20 rounded-full blur-xl" />
       </div>
 
       <div className="relative z-10 max-w-md w-full space-y-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center"
-        >
+        <div className="text-center">
           <div className="flex justify-center mb-6">
             <LogoLogin size={120} />
           </div>
@@ -130,15 +87,10 @@ export default function LoginPage() {
           <p className="text-gray-600">
             OtoTakibim'e hoş geldiniz
           </p>
-        </motion.div>
+        </div>
 
         {/* Login Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100"
-        >
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
@@ -271,15 +223,10 @@ export default function LoginPage() {
               Şifrenizi mi unuttunuz?
             </Link>
           </div>
-        </motion.div>
+        </div>
 
         {/* Register Link */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-center"
-        >
+        <div className="text-center">
           <p className="text-gray-600">
             Henüz hesabınız yok mu?{' '}
             <Link 
@@ -289,15 +236,10 @@ export default function LoginPage() {
               Ücretsiz kayıt olun
             </Link>
           </p>
-        </motion.div>
+        </div>
 
         {/* Back to Home */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="text-center"
-        >
+        <div className="text-center">
           <Link 
             href="/"
             className="inline-flex items-center space-x-2 text-gray-500 hover:text-gray-700 transition-colors duration-200"
@@ -305,7 +247,7 @@ export default function LoginPage() {
             <ArrowRight className="h-4 w-4 rotate-180" />
             <span>Ana Sayfaya Dön</span>
           </Link>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

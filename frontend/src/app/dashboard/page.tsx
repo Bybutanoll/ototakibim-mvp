@@ -1,11 +1,14 @@
 "use client";
-import { useAuth } from '@/contexts/AuthContext';
+// import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, loading } = useAuth();
+  // const { user, isAuthenticated, loading } = useAuth();
+  const user = { name: 'Demo User', email: 'demo@example.com' };
+  const isAuthenticated = true;
+  const loading = false;
   const router = useRouter();
 
   useEffect(() => {

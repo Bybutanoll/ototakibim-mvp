@@ -1,6 +1,6 @@
 import React from 'react';
 import Avatar from '../atoms/Avatar';
-import Badge from '../atoms/Badge';
+import { Badge } from '../atoms/Badge';
 import Icon from '../atoms/Icon';
 import { MoreVertical, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 
@@ -67,14 +67,16 @@ const UserCard: React.FC<UserCardProps> = ({
             )}
             <div className="flex items-center space-x-2 mt-2">
               <Badge
-                text={getRoleDisplayName(user.tenantRole)}
-                color="secondary"
+                variant="info"
                 className={getRoleBadgeColor(user.tenantRole)}
-              />
+              >
+                {getRoleDisplayName(user.tenantRole)}
+              </Badge>
               <Badge
-                text={user.isActive ? 'Aktif' : 'Deaktif'}
-                color={user.isActive ? 'success' : 'error'}
-              />
+                variant={user.isActive ? 'success' : 'error'}
+              >
+                {user.isActive ? 'Aktif' : 'Deaktif'}
+              </Badge>
             </div>
             {user.lastLogin && (
               <p className="text-xs text-gray-400 mt-1">

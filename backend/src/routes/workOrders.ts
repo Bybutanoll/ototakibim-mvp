@@ -8,6 +8,16 @@ import {
   deleteWorkOrder 
 } from '../controllers/workOrderController';
 import { authenticateToken } from '../middleware/auth';
+import { 
+  checkUsageLimit, 
+  requireActiveSubscription, 
+  trackApiUsage 
+} from '../middleware/subscription';
+import { 
+  requirePermission, 
+  requireAnyPermission, 
+  checkResourceOwnership 
+} from '../middleware/permissions';
 
 const router = express.Router();
 
@@ -40,11 +50,50 @@ const updateStatusValidation = [
 ];
 
 // Routes
-router.post('/', authenticateToken, createWorkOrderValidation, createWorkOrder);
-router.get('/', authenticateToken, getWorkOrders);
-router.get('/:id', authenticateToken, getWorkOrder);
-router.put('/:id', authenticateToken, updateWorkOrderValidation, updateWorkOrder);
-router.delete('/:id', authenticateToken, deleteWorkOrder);
-router.patch('/:id/status', authenticateToken, updateStatusValidation, updateWorkOrder);
+router.post('/', 
+  authenticateToken, 
+  requireActiveSubscription, 
+  checkUsageLimit('workOrders'),
+  requirePermission('workOrders', 'create'),
+  createWorkOrderValidation, 
+  createWorkOrder
+);
+router.get('/', 
+  authenticateToken, 
+  requireActiveSubscription, 
+  trackApiUsage, 
+  requirePermission('workOrders', 'read'),
+  getWorkOrders
+);
+router.get('/:id', 
+  authenticateToken, 
+  requireActiveSubscription, 
+  trackApiUsage, 
+  requirePermission('workOrders', 'read'),
+  getWorkOrder
+);
+router.put('/:id', 
+  authenticateToken, 
+  requireActiveSubscription, 
+  trackApiUsage, 
+  requirePermission('workOrders', 'update'),
+  updateWorkOrderValidation, 
+  updateWorkOrder
+);
+router.delete('/:id', 
+  authenticateToken, 
+  requireActiveSubscription, 
+  trackApiUsage, 
+  requirePermission('workOrders', 'delete'),
+  deleteWorkOrder
+);
+router.patch('/:id/status', 
+  authenticateToken, 
+  requireActiveSubscription, 
+  trackApiUsage, 
+  requireAnyPermission('workOrders', ['update', 'assign']),
+  updateStatusValidation, 
+  updateWorkOrder
+);
 
 export default router;

@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import User, { IUser } from '../models/User';
@@ -15,13 +14,9 @@ import { emailService } from '../services/emailService';
 // Register user
 export const register = async (req: Request, res: Response) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation hatası',
-        errors: errors.array()
-      });
+    // Basit validation
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).json({ error: 'Email and password required' });
     }
 
     const { firstName, lastName, email, phone, password, role } = req.body;
@@ -64,7 +59,9 @@ export const register = async (req: Request, res: Response) => {
     const tokenPair = generateTokenPair({
       id: (user._id as any).toString(),
       email: user.email,
-      role: user.role
+      tenantId: user.tenantId,
+      role: user.tenantRole,
+      tenantRole: user.tenantRole
     });
 
     // Store refresh token in database
@@ -80,7 +77,9 @@ export const register = async (req: Request, res: Response) => {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        tenantId: user.tenantId,
+      role: user.tenantRole,
+      tenantRole: user.tenantRole,
         isActive: user.isActive,
         emailVerified: user.emailVerified,
         createdAt: user.createdAt,
@@ -102,13 +101,9 @@ export const register = async (req: Request, res: Response) => {
 // Login user
 export const login = async (req: Request, res: Response) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation hatası',
-        errors: errors.array()
-      });
+    // Basit validation
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).json({ error: 'Email and password required' });
     }
 
     const { email, password } = req.body;
@@ -123,7 +118,7 @@ export const login = async (req: Request, res: Response) => {
           firstName: 'Mehmet',
           lastName: 'Usta',
           phone: '+90 555 123 4567',
-          role: 'technician',
+          tenantRole: 'technician',
           isActive: true,
           onboardingCompleted: true,
           businessName: 'Mehmet Usta Oto Servis',
@@ -139,7 +134,7 @@ export const login = async (req: Request, res: Response) => {
           firstName: 'Ayşe',
           lastName: 'Demir',
           phone: '+90 555 987 6543',
-          role: 'manager',
+          tenantRole: 'manager',
           isActive: true,
           onboardingCompleted: true,
           businessName: 'Demir Fleet Management',
@@ -163,7 +158,9 @@ export const login = async (req: Request, res: Response) => {
       const tokenPair = generateTokenPair({
         id: demoUser._id,
         email: demoUser.email,
-        role: demoUser.role
+        tenantId: 'demo-tenant',
+        role: demoUser.tenantRole,
+        tenantRole: demoUser.tenantRole
       });
 
       return res.status(200).json({
@@ -175,7 +172,9 @@ export const login = async (req: Request, res: Response) => {
           lastName: demoUser.lastName,
           email: demoUser.email,
           phone: demoUser.phone,
-          role: demoUser.role,
+          tenantId: 'demo-tenant',
+        role: demoUser.tenantRole,
+        tenantRole: demoUser.tenantRole,
           isActive: demoUser.isActive,
           onboardingCompleted: demoUser.onboardingCompleted,
           businessName: demoUser.businessName,
@@ -238,7 +237,9 @@ export const login = async (req: Request, res: Response) => {
     const tokenPair = generateTokenPair({
       id: (user._id as any).toString(),
       email: user.email,
-      role: user.role
+      tenantId: user.tenantId,
+      role: user.tenantRole,
+      tenantRole: user.tenantRole
     });
 
     // Store refresh token in database
@@ -254,7 +255,9 @@ export const login = async (req: Request, res: Response) => {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        tenantId: user.tenantId,
+      role: user.tenantRole,
+      tenantRole: user.tenantRole,
         isActive: user.isActive,
         emailVerified: user.emailVerified,
         lastLogin: user.lastLogin,
@@ -316,7 +319,9 @@ export const refreshToken = async (req: Request, res: Response) => {
     const tokenPair = generateTokenPair({
       id: (user._id as any).toString(),
       email: user.email,
-      role: user.role
+      tenantId: user.tenantId,
+      role: user.tenantRole,
+      tenantRole: user.tenantRole
     });
 
     // Update refresh tokens (remove old, add new)
@@ -525,7 +530,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
           firstName: 'Mehmet',
           lastName: 'Usta',
           phone: '+90 555 123 4567',
-          role: 'technician',
+          tenantRole: 'technician',
           isActive: true,
           onboardingCompleted: true,
           businessName: 'Mehmet Usta Oto Servis',
@@ -540,7 +545,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
           firstName: 'Ayşe',
           lastName: 'Demir',
           phone: '+90 555 987 6543',
-          role: 'manager',
+          tenantRole: 'manager',
           isActive: true,
           onboardingCompleted: true,
           businessName: 'Demir Fleet Management',
@@ -569,7 +574,9 @@ export const getCurrentUser = async (req: Request, res: Response) => {
           lastName: demoUser.lastName,
           email: demoUser.email,
           phone: demoUser.phone,
-          role: demoUser.role,
+          tenantId: 'demo-tenant',
+        role: demoUser.tenantRole,
+        tenantRole: demoUser.tenantRole,
           isActive: demoUser.isActive,
           onboardingCompleted: demoUser.onboardingCompleted,
           businessName: demoUser.businessName,
@@ -597,7 +604,9 @@ export const getCurrentUser = async (req: Request, res: Response) => {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        tenantId: user.tenantId,
+      role: user.tenantRole,
+      tenantRole: user.tenantRole,
         isActive: user.isActive,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
@@ -615,13 +624,9 @@ export const getCurrentUser = async (req: Request, res: Response) => {
 // Update profile
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation hatası',
-        errors: errors.array()
-      });
+    // Basit validation
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).json({ error: 'Email and password required' });
     }
 
     const { firstName, lastName, phone } = req.body;
@@ -650,7 +655,9 @@ export const updateProfile = async (req: Request, res: Response) => {
           lastName: user.lastName,
           email: user.email,
           phone: user.phone,
-          role: user.role
+          tenantId: user.tenantId,
+      role: user.tenantRole,
+      tenantRole: user.tenantRole
         }
       }
     });

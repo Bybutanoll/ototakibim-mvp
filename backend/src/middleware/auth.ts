@@ -105,6 +105,31 @@ export const requireTechnician = authorizeRoles('technician', 'manager', 'owner'
 export const requireSuperAdmin = authorizeRoles('super_admin');
 export const requireGlobalAdmin = authorizeRoles('super_admin', 'admin');
 
+// Tenant-specific role checks
+export const requireTenantRole = (...roles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Yetkilendirme gereklidir'
+      });
+    }
+
+    const userRole = req.user.tenantRole;
+    if (!userRole || !roles.includes(userRole)) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Bu işlem için yetkiniz yok',
+        code: 'INSUFFICIENT_PERMISSIONS',
+        requiredRoles: roles,
+        userRole: userRole
+      });
+    }
+
+    next();
+  };
+};
+
 // Legacy role checks (for backward compatibility)
 export const requireAdmin = authorizeRoles('admin', 'super_admin');
 export const requireTechnicianOrAdmin = authorizeRoles('technician', 'manager', 'owner', 'admin', 'super_admin');

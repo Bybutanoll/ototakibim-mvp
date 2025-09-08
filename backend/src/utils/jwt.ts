@@ -13,6 +13,7 @@ export interface TokenPayload {
   email: string;
   tenantId: string;
   tenantRole: string;
+  role: string; // Alias for tenantRole for backward compatibility
   globalRole?: string;
   iat?: number;
   exp?: number;
@@ -116,6 +117,7 @@ export const generateToken = (userId: string): string => {
     id: userId, 
     email: '', 
     tenantId: 'default-tenant',
+    role: 'technician',
     tenantRole: 'technician'
   });
 };

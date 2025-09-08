@@ -7,6 +7,7 @@ import { Badge } from '@/components/atoms/Badge';
 import { Button } from '@/components/atoms/Button';
 import { LoadingSpinner } from '@/components/atoms/LoadingSpinner';
 import { Icon } from '@/components/atoms/Icon';
+import { AlertCircle, BarChart3, Activity, RefreshCw, Wrench, Users, HardDrive, RotateCcw } from 'lucide-react';
 
 export const UsageDashboard: React.FC = () => {
   const { dashboard, isLoading, error, getUsageDashboard, resetUsageCounters } = useUsageMonitoring();
@@ -23,7 +24,7 @@ export const UsageDashboard: React.FC = () => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-center">
-          <Icon name="alert-circle" className="h-5 w-5 text-red-400 mr-2" />
+          <Icon icon={AlertCircle} className="h-5 w-5 text-red-400 mr-2" />
           <p className="text-red-800">{error}</p>
         </div>
         <Button 
@@ -41,7 +42,7 @@ export const UsageDashboard: React.FC = () => {
   if (!dashboard) {
     return (
       <div className="text-center py-8">
-        <Icon name="bar-chart-3" className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <Icon icon={BarChart3} className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-500">Kullanım verileri bulunamadı</p>
       </div>
     );
@@ -116,10 +117,10 @@ export const UsageDashboard: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <Icon name="activity" className="h-5 w-5 text-blue-500 mr-2" />
+              <Icon icon={Activity} className="h-5 w-5 text-blue-500 mr-2" />
               <h3 className="text-sm font-medium text-gray-900">API Çağrıları</h3>
             </div>
-            <Icon name="refresh-cw" className="h-4 w-4 text-gray-400" />
+            <Icon icon={RefreshCw} className="h-4 w-4 text-gray-400" />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -146,10 +147,10 @@ export const UsageDashboard: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <Icon name="wrench" className="h-5 w-5 text-green-500 mr-2" />
+              <Icon icon={Wrench} className="h-5 w-5 text-green-500 mr-2" />
               <h3 className="text-sm font-medium text-gray-900">İş Emirleri</h3>
             </div>
-            <Icon name="refresh-cw" className="h-4 w-4 text-gray-400" />
+            <Icon icon={RefreshCw} className="h-4 w-4 text-gray-400" />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -176,10 +177,10 @@ export const UsageDashboard: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <Icon name="users" className="h-5 w-5 text-purple-500 mr-2" />
+              <Icon icon={Users} className="h-5 w-5 text-purple-500 mr-2" />
               <h3 className="text-sm font-medium text-gray-900">Kullanıcılar</h3>
             </div>
-            <Icon name="refresh-cw" className="h-4 w-4 text-gray-400" />
+            <Icon icon={RefreshCw} className="h-4 w-4 text-gray-400" />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -206,10 +207,10 @@ export const UsageDashboard: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <Icon name="hard-drive" className="h-5 w-5 text-orange-500 mr-2" />
+              <Icon icon={HardDrive} className="h-5 w-5 text-orange-500 mr-2" />
               <h3 className="text-sm font-medium text-gray-900">Depolama</h3>
             </div>
-            <Icon name="refresh-cw" className="h-4 w-4 text-gray-400" />
+            <Icon icon={RefreshCw} className="h-4 w-4 text-gray-400" />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -244,7 +245,7 @@ export const UsageDashboard: React.FC = () => {
             variant="outline"
             size="sm"
           >
-            <Icon name="refresh-cw" className="h-4 w-4 mr-2" />
+            <Icon icon={RefreshCw} className="h-4 w-4 mr-2" />
             Yenile
           </Button>
           <Button 
@@ -253,7 +254,7 @@ export const UsageDashboard: React.FC = () => {
             size="sm"
             className="text-orange-600 hover:text-orange-700"
           >
-            <Icon name="rotate-ccw" className="h-4 w-4 mr-2" />
+            <Icon icon={RotateCcw} className="h-4 w-4 mr-2" />
             Sayaçları Sıfırla
           </Button>
         </div>

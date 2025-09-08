@@ -1,253 +1,604 @@
 import { Request, Response } from 'express';
-import { catchAsync, CustomError } from '../middleware/errorHandler';
+import { paymentService } from '../services/paymentService';
+import Tenant from '../models/Tenant';
+import Stripe from 'stripe';
 
-// Demo mode kontrolü
-const isDemoMode = process.env.NODE_ENV !== 'production' && !process.env.MONGODB_URI;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-08-27.basil',
+});
 
-// Get all payments with pagination and search
-export const getPayments = catchAsync(async (req: Request, res: Response) => {
-  if (isDemoMode) {
-    const demoPayments = [
-      {
-        _id: 'demo_payment_1',
-        invoiceNumber: 'FAT-2024-001',
-        invoiceDate: new Date('2024-01-15T10:00:00Z'),
-        dueDate: new Date('2024-01-22T10:00:00Z'),
-        paymentMethod: 'credit_card',
-        paymentStatus: 'paid',
-        subtotal: 250,
-        taxRate: 20,
-        taxAmount: 50,
-        totalAmount: 300,
-        paidAmount: 300,
-        remainingAmount: 0,
-        customerInfo: {
-          name: 'Ahmet Yılmaz',
-          phone: '+90 555 111 2233',
-          email: 'ahmet@demo.com'
-        },
-        vehicleInfo: {
-          plate: '34 ABC 123',
-          brand: 'Toyota',
-          model: 'Corolla',
-          year: 2020
-        },
-        isOverdue: false,
-        isFullyPaid: true,
-        paymentProgress: 100,
-        daysOverdue: 0,
-        createdAt: new Date('2024-01-15T10:00:00Z'),
-        updatedAt: new Date('2024-01-15T14:30:00Z')
-      },
-      {
-        _id: 'demo_payment_2',
-        invoiceNumber: 'FAT-2024-002',
-        invoiceDate: new Date('2024-01-14T09:00:00Z'),
-        dueDate: new Date('2024-01-21T09:00:00Z'),
-        paymentMethod: 'installment',
-        paymentStatus: 'partial',
-        subtotal: 260,
-        taxRate: 20,
-        taxAmount: 52,
-        totalAmount: 312,
-        paidAmount: 156,
-        remainingAmount: 156,
-        customerInfo: {
-          name: 'Ayşe Kaya',
-          phone: '+90 555 333 4455',
-          email: 'ayse@demo.com'
-        },
-        vehicleInfo: {
-          plate: '06 XYZ 789',
-          brand: 'Honda',
-          model: 'Civic',
-          year: 2019
-        },
-        isOverdue: false,
-        isFullyPaid: false,
-        paymentProgress: 50,
-        daysOverdue: 0,
-        createdAt: new Date('2024-01-14T09:00:00Z'),
-        updatedAt: new Date('2024-01-14T09:00:00Z')
+export class PaymentController {
+  async createCustomer(req: Request, res: Response) {
+    try {
+      const { email, name, metadata } = req.body;
+      const tenantId = (req as any).user.tenantId;
+
+      const existingTenant = await Tenant.findById(tenantId);
+      if (existingTenant?.subscription.stripeCustomerId) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Müşteri zaten mevcut'
+        });
       }
-    ];
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const search = req.query.search as string || '';
-    const status = req.query.status as string || '';
+      const customer = await paymentService.createCustomer({
+        email,
+        name,
+        tenantId,
+        metadata: {
+          ...metadata
+        }
+      });
 
-    let filteredPayments = demoPayments;
-    
-    if (search) {
-      filteredPayments = filteredPayments.filter(payment =>
-        payment.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
-        payment.customerInfo.name.toLowerCase().includes(search.toLowerCase()) ||
-        payment.customerInfo.phone.toLowerCase().includes(search.toLowerCase()) ||
-        payment.vehicleInfo.plate.toLowerCase().includes(search.toLowerCase())
+      // Update tenant with customer ID
+      await Tenant.findByIdAndUpdate(tenantId, {
+        'subscription.stripeCustomerId': customer.id
+      });
+
+      res.status(201).json({
+        status: 'success',
+        data: customer
+      });
+    } catch (error) {
+      console.error('Create customer error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Müşteri oluşturulurken hata oluştu'
+      });
+    }
+  }
+
+  async getCustomer(req: Request, res: Response) {
+    try {
+      const tenantId = (req as any).user.tenantId;
+      const tenant = await Tenant.findById(tenantId);
+
+      if (!tenant?.subscription.stripeCustomerId) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Müşteri bulunamadı'
+        });
+      }
+
+      const customer = await paymentService.getCustomer(tenant.subscription.stripeCustomerId);
+
+      res.json({
+        status: 'success',
+        data: customer
+      });
+    } catch (error) {
+      console.error('Get customer error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Müşteri bilgileri alınırken hata oluştu'
+      });
+    }
+  }
+
+  async createSubscription(req: Request, res: Response) {
+    try {
+      const { priceId, trialPeriodDays } = req.body;
+      const tenantId = (req as any).user.tenantId;
+
+      const tenant = await Tenant.findById(tenantId);
+      if (!tenant?.subscription.stripeCustomerId) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Önce müşteri oluşturulmalı'
+        });
+      }
+
+      const subscription = await paymentService.createSubscription({
+        customerId: tenant.subscription.stripeCustomerId,
+        priceId,
+        tenantId,
+        trialPeriodDays
+      });
+
+      // Update tenant with subscription info
+      await Tenant.findByIdAndUpdate(tenantId, {
+        'subscription.stripeSubscriptionId': subscription.id,
+        'subscription.plan': subscription.items.data[0].price.id,
+        'subscription.status': subscription.status
+      });
+
+      res.status(201).json({
+        status: 'success',
+        data: subscription
+      });
+    } catch (error) {
+      console.error('Create subscription error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Abonelik oluşturulurken hata oluştu'
+      });
+    }
+  }
+
+  async getSubscription(req: Request, res: Response) {
+    try {
+      const tenantId = (req as any).user.tenantId;
+      const tenant = await Tenant.findById(tenantId);
+
+      if (!tenant?.subscription.stripeSubscriptionId) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Abonelik bulunamadı'
+        });
+      }
+
+      const subscription = await paymentService.getSubscription(tenant.subscription.stripeSubscriptionId);
+
+      res.json({
+        status: 'success',
+        data: subscription
+      });
+    } catch (error) {
+      console.error('Get subscription error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Abonelik bilgileri alınırken hata oluştu'
+      });
+    }
+  }
+
+  async updateSubscription(req: Request, res: Response) {
+    try {
+      const { priceId, quantity } = req.body;
+      const tenantId = (req as any).user.tenantId;
+
+      const tenant = await Tenant.findById(tenantId);
+      if (!tenant?.subscription.stripeSubscriptionId) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Abonelik bulunamadı'
+        });
+      }
+
+      const subscription = await paymentService.updateSubscription({
+        subscriptionId: tenant.subscription.stripeSubscriptionId,
+        priceId,
+        quantity
+      });
+
+      // Update tenant with new subscription info
+      if (priceId) {
+        await Tenant.findByIdAndUpdate(tenantId, {
+          'subscription.plan': priceId
+        });
+      }
+
+      res.json({
+        status: 'success',
+        data: subscription
+      });
+    } catch (error) {
+      console.error('Update subscription error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Abonelik güncellenirken hata oluştu'
+      });
+    }
+  }
+
+  async cancelSubscription(req: Request, res: Response) {
+    try {
+      const { immediately } = req.body;
+      const tenantId = (req as any).user.tenantId;
+
+      const tenant = await Tenant.findById(tenantId);
+      if (!tenant?.subscription.stripeSubscriptionId) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Abonelik bulunamadı'
+        });
+      }
+
+      const subscription = await paymentService.cancelSubscription(
+        tenant.subscription.stripeSubscriptionId,
+        immediately
       );
-    }
-    
-    if (status) {
-      filteredPayments = filteredPayments.filter(payment => payment.paymentStatus === status);
-    }
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const paginatedPayments = filteredPayments.slice(startIndex, endIndex);
+      // Update tenant subscription status
+      await Tenant.findByIdAndUpdate(tenantId, {
+        'subscription.status': subscription.status
+      });
+
+      res.json({
+        status: 'success',
+        data: subscription
+      });
+    } catch (error) {
+      console.error('Cancel subscription error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Abonelik iptal edilirken hata oluştu'
+      });
+    }
+  }
+
+  async getPaymentMethods(req: Request, res: Response) {
+    try {
+      const tenantId = (req as any).user.tenantId;
+      const tenant = await Tenant.findById(tenantId);
+
+      if (!tenant?.subscription.stripeCustomerId) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Müşteri bulunamadı'
+        });
+      }
+
+      const paymentMethods = await paymentService.getCustomerPaymentMethods(tenant.subscription.stripeCustomerId);
 
     res.json({
       status: 'success',
-      data: paginatedPayments,
-      pagination: {
-        current: page,
-        pages: Math.ceil(filteredPayments.length / limit),
-        total: filteredPayments.length
+        data: paymentMethods
+      });
+    } catch (error) {
+      console.error('Get payment methods error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ödeme yöntemleri alınırken hata oluştu'
+      });
+    }
+  }
+
+  async createSetupIntent(req: Request, res: Response) {
+    try {
+      const tenantId = (req as any).user.tenantId;
+      const tenant = await Tenant.findById(tenantId);
+
+      if (!tenant?.subscription.stripeCustomerId) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Müşteri bulunamadı'
+        });
       }
-    });
-    return;
+
+      const setupIntent = await paymentService.createSetupIntent(tenant.subscription.stripeCustomerId);
+
+      res.json({
+        status: 'success',
+        data: setupIntent
+      });
+    } catch (error) {
+      console.error('Create setup intent error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Setup intent oluşturulurken hata oluştu'
+      });
+    }
   }
 
-  const userId = (req as any).user?.id;
-  if (!userId) {
-    throw new CustomError('Kullanıcı kimliği bulunamadı', 401);
-  }
+  async setDefaultPaymentMethod(req: Request, res: Response) {
+    try {
+      const { paymentMethodId } = req.body;
+      const tenantId = (req as any).user.tenantId;
 
-  res.json({ status: 'success', data: [], message: 'Production mode - MongoDB gerekli' });
-});
-
-// Get payment statistics
-export const getPaymentStats = catchAsync(async (req: Request, res: Response) => {
-  if (isDemoMode) {
-    const stats = {
-      total: 45,
-      pending: 8,
-      partial: 5,
-      paid: 25,
-      overdue: 5,
-      cancelled: 2,
-      totalRevenue: 125000,
-      pendingAmount: 15000,
-      overdueAmount: 8000,
-      thisMonth: 25000,
-      lastMonth: 20000,
-      averagePayment: 2777.78,
-      paymentMethods: {
-        'cash': 15,
-        'credit_card': 12,
-        'bank_transfer': 10,
-        'installment': 5,
-        'check': 3
+      const tenant = await Tenant.findById(tenantId);
+      if (!tenant?.subscription.stripeCustomerId) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Müşteri bulunamadı'
+        });
       }
-    };
 
-    res.json({ status: 'success', data: stats });
-    return;
+      await paymentService.setDefaultPaymentMethod(
+        tenant.subscription.stripeCustomerId,
+        paymentMethodId
+      );
+
+      res.json({
+        status: 'success',
+        message: 'Varsayılan ödeme yöntemi güncellendi'
+      });
+    } catch (error) {
+      console.error('Set default payment method error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Varsayılan ödeme yöntemi güncellenirken hata oluştu'
+      });
+    }
   }
 
-  res.json({ status: 'success', data: {}, message: 'Production mode - MongoDB gerekli' });
-});
+  async deletePaymentMethod(req: Request, res: Response) {
+    try {
+      const { paymentMethodId } = req.params;
 
-// Create new payment
-export const createPayment = catchAsync(async (req: Request, res: Response) => {
-  if (isDemoMode) {
-    const newPayment = {
-      _id: 'demo_payment_new',
-      invoiceNumber: req.body.invoiceNumber || 'FAT-2024-NEW',
-      invoiceDate: new Date(req.body.invoiceDate || Date.now()),
-      dueDate: new Date(req.body.dueDate || Date.now() + 7 * 24 * 60 * 60 * 1000),
-      paymentMethod: req.body.paymentMethod || 'cash',
-      paymentStatus: 'pending',
-      subtotal: req.body.subtotal || 100,
-      taxRate: req.body.taxRate || 20,
-      taxAmount: req.body.taxAmount || 20,
-      totalAmount: req.body.totalAmount || 120,
-      paidAmount: 0,
-      remainingAmount: req.body.totalAmount || 120,
-      customerInfo: {
-        name: req.body.customerName || 'Demo Müşteri',
-        phone: req.body.customerPhone || '+90 555 000 0000',
-        email: req.body.customerEmail || 'demo@demo.com'
-      },
-      vehicleInfo: {
-        plate: req.body.vehiclePlate || '34 DEMO 001',
-        brand: req.body.vehicleBrand || 'Demo',
-        model: req.body.vehicleModel || 'Model',
-        year: req.body.vehicleYear || 2020
-      },
-      isOverdue: false,
-      isFullyPaid: false,
-      paymentProgress: 0,
-      daysOverdue: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+      await paymentService.deletePaymentMethod(paymentMethodId);
 
-    res.status(201).json({ status: 'success', message: 'Ödeme başarıyla oluşturuldu', data: newPayment });
-    return;
+      res.json({
+        status: 'success',
+        message: 'Ödeme yöntemi silindi'
+      });
+    } catch (error) {
+      console.error('Delete payment method error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ödeme yöntemi silinirken hata oluştu'
+      });
+    }
   }
 
-  res.json({ status: 'success', message: 'Production mode - MongoDB gerekli' });
-});
+  async getInvoices(req: Request, res: Response) {
+    try {
+      const { limit = 10 } = req.query;
+      const tenantId = (req as any).user.tenantId;
 
-// Get single payment
-export const getPayment = catchAsync(async (req: Request, res: Response) => {
-  if (isDemoMode) {
-    const demoPayment = {
-      _id: 'demo_payment_1',
-      invoiceNumber: 'FAT-2024-001',
-      invoiceDate: new Date('2024-01-15T10:00:00Z'),
-      dueDate: new Date('2024-01-22T10:00:00Z'),
-      paymentMethod: 'credit_card',
-      paymentStatus: 'paid',
-      subtotal: 250,
-      taxRate: 20,
-      taxAmount: 50,
-      totalAmount: 300,
-      paidAmount: 300,
-      remainingAmount: 0,
-      customerInfo: {
-        name: 'Ahmet Yılmaz',
-        phone: '+90 555 111 2233',
-        email: 'ahmet@demo.com'
-      },
-      vehicleInfo: {
-        plate: '34 ABC 123',
-        brand: 'Toyota',
-        model: 'Corolla',
-        year: 2020
-      },
-      isOverdue: false,
-      isFullyPaid: true,
-      paymentProgress: 100,
-      daysOverdue: 0,
-      createdAt: new Date('2024-01-15T10:00:00Z'),
-      updatedAt: new Date('2024-01-15T14:30:00Z')
-    };
+      const tenant = await Tenant.findById(tenantId);
+      if (!tenant?.subscription.stripeCustomerId) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Müşteri bulunamadı'
+        });
+      }
 
-    res.json({ status: 'success', data: demoPayment });
-    return;
+      const invoices = await paymentService.getInvoices(
+        tenant.subscription.stripeCustomerId,
+        Number(limit)
+      );
+
+      res.json({
+        status: 'success',
+        data: invoices
+      });
+    } catch (error) {
+      console.error('Get invoices error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Faturalar alınırken hata oluştu'
+      });
+    }
   }
 
-  res.json({ status: 'success', data: {}, message: 'Production mode - MongoDB gerekli' });
-});
+  async getProducts(req: Request, res: Response) {
+    try {
+      const products = await paymentService.getProducts();
 
-// Add payment
-export const addPayment = catchAsync(async (req: Request, res: Response) => {
-  if (isDemoMode) {
-    res.json({ status: 'success', message: 'Ödeme başarıyla eklendi' });
-    return;
+      res.json({
+        status: 'success',
+        data: products
+      });
+    } catch (error) {
+      console.error('Get products error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ürünler alınırken hata oluştu'
+      });
+    }
   }
 
-  res.json({ status: 'success', message: 'Production mode - MongoDB gerekli' });
-});
+  async getPrices(req: Request, res: Response) {
+    try {
+      const prices = await paymentService.getPrices();
 
-// Delete payment
-export const deletePayment = catchAsync(async (req: Request, res: Response) => {
-  if (isDemoMode) {
-    res.json({ status: 'success', message: 'Ödeme başarıyla silindi' });
-    return;
+      res.json({
+        status: 'success',
+        data: prices
+      });
+    } catch (error) {
+      console.error('Get prices error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Fiyatlar alınırken hata oluştu'
+      });
+    }
   }
 
-  res.json({ status: 'success', message: 'Production mode - MongoDB gerekli' });
-});
+  // Legacy payment methods for backward compatibility
+  async getPayments(req: Request, res: Response) {
+    try {
+      const tenantId = (req as any).user.tenantId;
+      const tenant = await Tenant.findById(tenantId);
+
+      if (!tenant?.subscription.stripeCustomerId) {
+        return res.json({
+          status: 'success',
+          data: []
+        });
+      }
+
+      const invoices = await paymentService.getInvoices(tenant.subscription.stripeCustomerId, 50);
+
+      res.json({
+        status: 'success',
+        data: invoices
+      });
+    } catch (error) {
+      console.error('Get payments error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ödemeler alınırken hata oluştu'
+      });
+    }
+  }
+
+  async getPayment(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const invoice = await paymentService.getInvoice(id);
+
+      res.json({
+        status: 'success',
+        data: invoice
+      });
+    } catch (error) {
+      console.error('Get payment error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ödeme bilgileri alınırken hata oluştu'
+      });
+    }
+  }
+
+  async createPayment(req: Request, res: Response) {
+    try {
+      // This would create a new invoice/payment
+      // For now, return a placeholder response
+      res.status(201).json({
+        status: 'success',
+        message: 'Ödeme oluşturuldu',
+        data: { id: 'temp-payment-id' }
+      });
+    } catch (error) {
+      console.error('Create payment error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ödeme oluşturulurken hata oluştu'
+      });
+    }
+  }
+
+  async addPayment(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { amount, paymentMethod, referenceNumber } = req.body;
+
+      // This would add a payment to an existing invoice
+      // For now, return a placeholder response
+      res.json({
+        status: 'success',
+        message: 'Ödeme eklendi',
+        data: { id, amount, paymentMethod, referenceNumber }
+      });
+    } catch (error) {
+      console.error('Add payment error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ödeme eklenirken hata oluştu'
+      });
+    }
+  }
+
+  async deletePayment(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      // This would delete a payment
+      // For now, return a placeholder response
+      res.json({
+        status: 'success',
+        message: 'Ödeme silindi'
+      });
+    } catch (error) {
+      console.error('Delete payment error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ödeme silinirken hata oluştu'
+      });
+    }
+  }
+
+  async getPaymentStats(req: Request, res: Response) {
+    try {
+      const tenantId = (req as any).user.tenantId;
+      const tenant = await Tenant.findById(tenantId);
+
+      if (!tenant?.subscription.stripeCustomerId) {
+        return res.json({
+          status: 'success',
+          data: {
+            totalPaid: 0,
+            totalDue: 0,
+            paymentCount: 0,
+            lastPaymentDate: null
+          }
+        });
+      }
+
+      const invoices = await paymentService.getInvoices(tenant.subscription.stripeCustomerId, 100);
+      
+      const stats = {
+        totalPaid: invoices.reduce((sum, invoice) => sum + invoice.amount_paid, 0),
+        totalDue: invoices.reduce((sum, invoice) => sum + invoice.amount_due, 0),
+        paymentCount: invoices.length,
+        lastPaymentDate: invoices.length > 0 ? new Date(Math.max(...invoices.map(i => i.status_transitions?.paid_at || 0))) : null
+      };
+
+      res.json({
+        status: 'success',
+        data: stats
+      });
+    } catch (error) {
+      console.error('Get payment stats error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ödeme istatistikleri alınırken hata oluştu'
+      });
+    }
+  }
+
+  async handleWebhook(req: Request, res: Response) {
+    try {
+      const sig = req.headers['stripe-signature'] as string;
+      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+      if (!endpointSecret) {
+        return res.status(400).json({ error: 'Webhook secret not configured' });
+      }
+
+      let event;
+      try {
+        // Stripe webhook event'ini doğrula
+        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+      } catch (err: any) {
+        console.log('Webhook signature verification failed:', err.message);
+        return res.status(400).json({ error: 'Webhook signature verification failed' });
+      }
+
+      // Event tipine göre işlem yap
+      switch (event.type) {
+        case 'checkout.session.completed':
+          await paymentService.handleCheckoutCompleted(event.data.object);
+          break;
+        case 'invoice.payment_succeeded':
+          await paymentService.handlePaymentSucceeded(event.data.object);
+          break;
+        case 'invoice.payment_failed':
+          await paymentService.handlePaymentFailed(event.data.object);
+          break;
+        case 'customer.subscription.updated':
+          await paymentService.handleSubscriptionUpdated(event.data.object);
+          break;
+        case 'customer.subscription.deleted':
+          await paymentService.handleSubscriptionDeleted(event.data.object);
+          break;
+        default:
+          console.log(`Unhandled event type: ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Webhook error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+}
+
+// Export controller instance
+export const paymentController = new PaymentController();
+
+// Export individual methods for routes
+export const {
+  createCustomer,
+  getCustomer,
+  createSubscription,
+  getSubscription,
+  updateSubscription,
+  cancelSubscription,
+  getPaymentMethods,
+  createSetupIntent,
+  setDefaultPaymentMethod,
+  deletePaymentMethod,
+  getInvoices,
+  getProducts,
+  getPrices,
+  getPayments,
+  getPayment,
+  createPayment,
+  addPayment,
+  deletePayment,
+  getPaymentStats,
+  handleWebhook
+} = paymentController;

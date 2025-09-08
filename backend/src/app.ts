@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import dotenv from 'dotenv';
 import { connectDB } from './config/database';
+import { healthcheck, detailedHealthcheck } from './middleware/healthcheck';
 import authRoutes from './routes/auth';
 import vehicleRoutes from './routes/vehicles';
 import workOrderRoutes from './routes/workOrder';
@@ -14,6 +15,7 @@ import obdRoutes from './routes/obd';
 import blockchainRoutes from './routes/blockchain';
 import arvrRoutes from './routes/arvr';
 import paymentRoutes from './routes/payments';
+import stripePaymentRoutes from './routes/payment';
 import aiRoutes from './routes/ai';
 import customerRoutes from './routes/customers';
 import maintenanceRoutes from './routes/maintenance';
@@ -23,6 +25,9 @@ import serviceRoutes from './routes/services';
 import appointmentRoutes from './routes/appointments';
 import reportRoutes from './routes/reports';
 import tenantRoutes from './routes/tenant';
+import subscriptionRoutes from './routes/subscription';
+import userRoutes from './routes/users';
+import usageMonitoringRoutes from './routes/usageMonitoring';
 import {
   securityHeaders,
   corsOptions,
@@ -37,6 +42,13 @@ import {
   authRateLimit,
   uploadRateLimit
 } from './middleware/security';
+import { 
+  rateLimiters, 
+  slowDowns, 
+  tenantRateLimiter, 
+  trackApiUsage,
+  requestSizeLimiter 
+} from './middleware/rateLimiting';
 import { 
   globalErrorHandler, 
   notFound, 
@@ -93,15 +105,10 @@ app.get('/', (req, res) => {
   });
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'OtoTakibim API çalışıyor',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
+// Health check endpoints
+app.get('/health', healthcheck);
+app.get('/api/health', healthcheck);
+app.get('/api/health/detailed', detailedHealthcheck);
 
 // Global OPTIONS handler for CORS preflight
 app.options('*', (req, res) => {
@@ -111,24 +118,28 @@ app.options('*', (req, res) => {
   res.status(200).end();
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/work-orders', workOrderRoutes);
-app.use('/api/obd', obdRoutes);
-app.use('/api/blockchain', blockchainRoutes);
-app.use('/api/arvr', arvrRoutes);
-app.use('/api/payment', paymentRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api', maintenanceRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/bi', biRoutes);
-app.use('/api/services', serviceRoutes);
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/tenant', tenantRoutes);
+// Routes with rate limiting
+app.use('/api/auth', rateLimiters.auth, slowDowns.auth, authRoutes);
+app.use('/api/vehicles', rateLimiters.general, slowDowns.general, vehicleRoutes);
+app.use('/api/work-orders', rateLimiters.general, slowDowns.general, workOrderRoutes);
+app.use('/api/obd', rateLimiters.general, slowDowns.general, obdRoutes);
+app.use('/api/blockchain', rateLimiters.general, slowDowns.general, blockchainRoutes);
+app.use('/api/arvr', rateLimiters.general, slowDowns.general, arvrRoutes);
+app.use('/api/payment', rateLimiters.payment, paymentRoutes);
+app.use('/api/ai', rateLimiters.general, slowDowns.general, aiRoutes);
+app.use('/api/customers', rateLimiters.general, slowDowns.general, customerRoutes);
+app.use('/api', rateLimiters.general, slowDowns.general, maintenanceRoutes);
+app.use('/api/inventory', rateLimiters.general, slowDowns.general, inventoryRoutes);
+app.use('/api/bi', rateLimiters.general, slowDowns.general, biRoutes);
+app.use('/api/services', rateLimiters.general, slowDowns.general, serviceRoutes);
+app.use('/api/appointments', rateLimiters.general, slowDowns.general, appointmentRoutes);
+app.use('/api/payments', rateLimiters.payment, paymentRoutes);
+app.use('/api/reports', rateLimiters.general, slowDowns.general, reportRoutes);
+app.use('/api/tenant', rateLimiters.general, slowDowns.general, tenantRoutes);
+app.use('/api/subscription', rateLimiters.general, slowDowns.general, subscriptionRoutes);
+app.use('/api/users', rateLimiters.general, slowDowns.general, userRoutes);
+app.use('/api/stripe', rateLimiters.payment, stripePaymentRoutes);
+app.use('/api/usage', rateLimiters.general, slowDowns.general, usageMonitoringRoutes);
 
 // 404 handler
 app.use('*', notFound);

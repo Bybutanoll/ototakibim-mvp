@@ -8,8 +8,12 @@ declare global {
   namespace Express {
     interface Request {
       tenantId?: string;
-      user?: any;
       tenant?: any;
+      tenantContext?: {
+        tenantId: string;
+        tenant: any;
+      };
+      user?: any;
     }
   }
 }
@@ -80,7 +84,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     }
 
     // Check if tenant subscription is active
-    if (!tenant.subscription.isActive) {
+    if (tenant.subscription.status !== 'active' && tenant.subscription.status !== 'trial') {
       return res.status(403).json({
         success: false,
         message: 'Tenant subscription is not active',
@@ -145,7 +149,7 @@ export const optionalTenantMiddleware = async (req: Request, res: Response, next
 
     if (tenantId) {
       const tenant = await Tenant.findOne({ tenantId, isActive: true });
-      if (tenant && tenant.subscription.isActive) {
+      if (tenant && (tenant.subscription.status === 'active' || tenant.subscription.status === 'trial')) {
         req.tenantId = tenantId;
         req.tenant = tenant;
       }

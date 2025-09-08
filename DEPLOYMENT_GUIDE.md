@@ -1,212 +1,230 @@
-# 🚀 OtoTakibim Deployment Guide
+# OtoTakibim Production Deployment Guide
 
-## 📋 Deployment Checklist
+Bu rehber, OtoTakibim uygulamasını production ortamına deploy etmek için gerekli adımları içerir.
 
-### ✅ Completed
-- [x] Git commit ve push tamamlandı
-- [x] Frontend optimizasyonu tamamlandı
-- [x] Production konfigürasyonları hazırlandı
-- [x] Environment variables tanımlandı
+## 📋 Gereksinimler
 
-### 🎯 Next Steps
+### Sistem Gereksinimleri
+- **OS**: Ubuntu 20.04+ / CentOS 8+ / RHEL 8+
+- **RAM**: Minimum 8GB, Önerilen 16GB+
+- **CPU**: Minimum 4 core, Önerilen 8 core+
+- **Disk**: Minimum 100GB SSD
+- **Network**: Statik IP adresi
 
-## 1. **Netlify Deployment (Frontend)**
+### Yazılım Gereksinimleri
+- **Docker**: 20.10+
+- **Docker Compose**: 2.0+
+- **Node.js**: 18+
+- **npm**: 8+
+- **Git**: 2.30+
 
-### Adım 1: Netlify'e Giriş
-1. [netlify.com](https://netlify.com) adresine gidin
-2. GitHub hesabınızla giriş yapın
+## 🚀 Hızlı Başlangıç
 
-### Adım 2: Yeni Site Oluştur
-1. **"New site from Git"** butonuna tıklayın
-2. **GitHub** seçin
-3. Repository: `Bybutanoll/ototakibim-mvp` seçin
-4. Branch: `main` seçin
+### 1. Sunucu Hazırlığı
 
-### Adım 3: Build Settings
-```
-Base directory: frontend
-Build command: npm run build
-Publish directory: .next
-```
+```bash
+# Sistem güncellemesi
+sudo apt update && sudo apt upgrade -y
 
-### Adım 4: Environment Variables
-Netlify Dashboard > Site Settings > Environment Variables:
+# Gerekli paketlerin kurulumu
+sudo apt install -y curl wget git unzip
 
-```
-NEXT_PUBLIC_API_URL=https://ototakibim-backend.onrender.com/api
-NEXT_PUBLIC_APP_NAME=OtoTakibim
-NEXT_PUBLIC_APP_VERSION=1.0.0
-NEXT_PUBLIC_ENABLE_ANALYTICS=true
-NEXT_PUBLIC_ENABLE_PWA=true
-NEXT_PUBLIC_ENABLE_AI_FEATURES=true
-NEXT_PUBLIC_DEBUG_MODE=false
-NODE_ENV=production
-```
+# Docker kurulumu
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
 
-### Adım 5: Deploy
-1. **"Deploy site"** butonuna tıklayın
-2. Build tamamlanana kadar bekleyin
-3. Site URL'ini not edin: `https://ototakibim.netlify.app`
+# Docker Compose kurulumu
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 
----
-
-## 2. **Render.com Deployment (Backend)**
-
-### Adım 1: Render'e Giriş
-1. [render.com](https://render.com) adresine gidin
-2. GitHub hesabınızla giriş yapın
-
-### Adım 2: Yeni Web Service Oluştur
-1. **"New +"** > **"Web Service"** seçin
-2. Repository: `Bybutanoll/ototakibim-mvp` seçin
-3. Branch: `main` seçin
-
-### Adım 3: Service Settings
-```
-Name: ototakibim-backend
-Environment: Node
-Region: Oregon (US West)
-Branch: main
-Root Directory: backend
-Build Command: npm install && npm run build
-Start Command: npm start
+# Node.js kurulumu
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
 ```
 
-### Adım 4: Environment Variables
+### 2. Proje Kurulumu
+
+```bash
+# Projeyi klonlama
+git clone https://github.com/your-username/ototakibim.git
+cd ototakibim
+
+# Environment dosyalarını oluşturma
+cp backend/env.production.example backend/.env.production
+cp frontend/env.production.example frontend/.env.production
+
+# Environment değişkenlerini düzenleme
+nano backend/.env.production
+nano frontend/.env.production
 ```
-NODE_ENV=production
-PORT=10000
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ototakibim?retryWrites=true&w=majority
-JWT_SECRET=your-production-jwt-secret-key
-JWT_EXPIRES_IN=7d
-CORS_ORIGIN=https://ototakibim.netlify.app
+
+### 3. SSL Sertifikası
+
+```bash
+# Let's Encrypt ile SSL sertifikası
+sudo apt install certbot python3-certbot-nginx
+
+# Domain için sertifika alma
+sudo certbot certonly --standalone -d ototakibim.com -d www.ototakibim.com -d api.ototakibim.com -d cdn.ototakibim.com
+
+# Sertifikaları nginx dizinine kopyalama
+sudo mkdir -p ssl
+sudo cp /etc/letsencrypt/live/ototakibim.com/fullchain.pem ssl/ototakibim.com.crt
+sudo cp /etc/letsencrypt/live/ototakibim.com/privkey.pem ssl/ototakibim.com.key
+```
+
+### 4. Deployment
+
+```bash
+# Deployment script'ini çalıştırma
+chmod +x deploy.sh
+./deploy.sh
+```
+
+## 🔧 Detaylı Konfigürasyon
+
+### Environment Variables
+
+#### Backend (.env.production)
+```bash
+# Database
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ototakibim_prod
+DB_NAME=ototakibim_prod
+
+# Security
+JWT_SECRET=your-super-secure-jwt-secret-key
+BCRYPT_ROUNDS=12
+
+# Redis
+REDIS_HOST=your-redis-host
+REDIS_PASSWORD=your-redis-password
+
+# Stripe
 STRIPE_SECRET_KEY=sk_live_your_stripe_secret_key
-SENDGRID_API_KEY=your_sendgrid_api_key
-GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
+STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_publishable_key
 ```
 
-### Adım 5: Deploy
-1. **"Create Web Service"** butonuna tıklayın
-2. Build tamamlanana kadar bekleyin
-3. Service URL'ini not edin: `https://ototakibim-backend.onrender.com`
+#### Frontend (.env.production)
+```bash
+# API
+NEXT_PUBLIC_API_URL=https://api.ototakibim.com
+NEXT_PUBLIC_APP_URL=https://ototakibim.com
 
----
+# Stripe
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_publishable_key
 
-## 3. **MongoDB Atlas Configuration**
+# Analytics
+NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=GA-XXXXXXXXX
+```
 
-### Adım 1: Database Access
-1. MongoDB Atlas Dashboard'a gidin
-2. **Database Access** > **Add New Database User**
-3. Username ve password oluşturun
-4. **Read and write to any database** yetkisi verin
+## 📊 Monitoring ve Logging
 
-### Adım 2: Network Access
-1. **Network Access** > **Add IP Address**
-2. **Allow access from anywhere** seçin (0.0.0.0/0)
+### Prometheus & Grafana
+- **Prometheus**: http://your-server:9090
+- **Grafana**: http://your-server:3001
+- **Default Login**: admin / admin
 
-### Adım 3: Connection String
-1. **Clusters** > **Connect** > **Connect your application**
-2. Connection string'i kopyalayın
-3. `<password>` kısmını gerçek password ile değiştirin
-4. Render.com environment variables'a ekleyin
+### ELK Stack
+- **Elasticsearch**: http://your-server:9200
+- **Kibana**: http://your-server:5601
+- **Logstash**: Port 5044
 
----
+## 🔒 Güvenlik
 
-## 4. **Post-Deployment Configuration**
+### Firewall Konfigürasyonu
+```bash
+# UFW kurulumu
+sudo ufw enable
 
-### Frontend (Netlify)
-1. **Site Settings** > **Domain Management**
-2. Custom domain ekleyin (opsiyonel)
-3. **Site Settings** > **Build & Deploy** > **Post Processing**
-4. **Asset Optimization** aktif edin
+# Gerekli portları açma
+sudo ufw allow 22/tcp    # SSH
+sudo ufw allow 80/tcp    # HTTP
+sudo ufw allow 443/tcp   # HTTPS
+```
 
-### Backend (Render)
-1. **Settings** > **Health Check**
-2. Health check path: `/health`
-3. **Settings** > **Auto-Deploy**
-4. Auto-deploy aktif edin
+### SSL/TLS
+- Let's Encrypt sertifikaları otomatik yenilenir
+- HSTS header'ları aktif
+- TLS 1.2+ zorunlu
 
----
+## 📦 Backup ve Restore
 
-## 5. **Testing Checklist**
+### Otomatik Backup
+```bash
+# Cron job ekleme
+crontab -e
 
-### Frontend Tests
-- [ ] Site açılıyor
-- [ ] Logo animasyonları çalışıyor
-- [ ] PWA install edilebiliyor
-- [ ] Offline mod çalışıyor
-- [ ] API bağlantısı çalışıyor
+# Her gün saat 02:00'da backup
+0 2 * * * /path/to/ototakibim/backup.sh
+```
 
-### Backend Tests
-- [ ] Health check endpoint çalışıyor
-- [ ] API endpoints erişilebiliyor
-- [ ] Database bağlantısı çalışıyor
-- [ ] Authentication çalışıyor
-- [ ] CORS ayarları doğru
+### Manuel Backup
+```bash
+# Tam backup
+./backup.sh
 
----
+# Sadece MongoDB
+./backup.sh --mongodb-only
+```
 
-## 6. **Monitoring & Analytics**
+## 🔄 Güncelleme
 
-### Netlify Analytics
-1. **Analytics** > **Enable Analytics**
-2. Real-time visitor tracking aktif
+### Zero-Downtime Deployment
+```bash
+# Yeni versiyonu çekme
+git pull origin main
 
-### Render Monitoring
-1. **Metrics** tab'ında CPU, Memory, Response time
-2. **Logs** tab'ında error tracking
+# Sadece build
+./deploy.sh --build-only
 
-### MongoDB Atlas Monitoring
-1. **Metrics** > **Database Performance**
-2. **Alerts** > **Set up alerts**
+# Sadece deploy
+./deploy.sh --deploy-only
+```
 
----
+## 🐛 Troubleshooting
 
-## 7. **Security Checklist**
+### Yaygın Sorunlar
 
-### Frontend Security
-- [x] Content Security Policy aktif
-- [x] XSS Protection aktif
-- [x] HTTPS redirect aktif
-- [x] Security headers aktif
+#### 1. Docker Container'ları Başlamıyor
+```bash
+# Container loglarını kontrol etme
+docker-compose -f docker-compose.production.yml logs
 
-### Backend Security
-- [ ] CORS ayarları doğru
-- [ ] JWT secret güçlü
-- [ ] Rate limiting aktif
-- [ ] Input validation aktif
+# Container'ları yeniden başlatma
+docker-compose -f docker-compose.production.yml restart
+```
 
----
+#### 2. Database Bağlantı Hatası
+```bash
+# MongoDB bağlantısını test etme
+mongo "mongodb://username:password@host:port/database"
 
-## 8. **Performance Optimization**
+# Redis bağlantısını test etme
+redis-cli -h host -p port -a password ping
+```
 
-### Frontend Performance
-- [x] Bundle optimization aktif
-- [x] Image optimization aktif
-- [x] Caching headers aktif
-- [x] PWA caching aktif
+## 📈 Performance Optimization
 
-### Backend Performance
-- [ ] Database indexing
-- [ ] Query optimization
-- [ ] Response compression
-- [ ] Connection pooling
+### Database Optimization
+```bash
+# MongoDB index'leri
+mongo ototakibim_prod
+> db.users.createIndex({email: 1})
+> db.workorders.createIndex({tenantId: 1, createdAt: -1})
+```
 
----
+### Caching
+- Redis cache aktif
+- Nginx static file caching
+- Browser caching headers
 
-## 🎉 Deployment Complete!
+## 📞 Destek
 
-Sisteminiz artık production'da çalışıyor:
+### İletişim
+- **Email**: support@ototakibim.com
+- **Slack**: #ototakibim-support
 
-- **Frontend**: https://ototakibim.netlify.app
-- **Backend**: https://ototakibim-backend.onrender.com
-- **Database**: MongoDB Atlas
-
-### Next Steps:
-1. Custom domain ekleyin
-2. SSL sertifikası kontrol edin
-3. Monitoring kurun
-4. Backup stratejisi oluşturun
-5. Performance monitoring aktif edin
-
-**OtoTakibim artık enterprise-grade seviyede! 🚀**
+### Dokümantasyon
+- **API Docs**: https://api.ototakibim.com/docs
+- **User Guide**: https://ototakibim.com/docs

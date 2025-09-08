@@ -1,0 +1,40 @@
+{
+  "name": "ototakibim-mvp",
+  "version": "1.0.0",
+  "description": "OtoTakibim - AI Destekli Araç Sağlık Asistanı",
+  "private": true,
+  "scripts": {
+    "kill-ports": "node scripts/kill-ports.js",
+    "kill-ports:bat": "scripts/kill-ports.bat",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:safe": "npm run kill-ports && npm run dev",
+    "dev:clean": "npm run kill-ports && npm run dev:backend & npm run dev:frontend",
+    "build": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "start": "cd frontend && npm run start",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "clean:all": "npm run kill-ports && rm -rf backend/node_modules frontend/node_modules backend/dist frontend/.next",
+    "test": "cd backend && npm test && cd ../frontend && npm test",
+    "lint": "cd backend && npm run lint && cd ../frontend && npm run lint",
+    "health": "curl http://localhost:5000/health || curl http://localhost:5001/health || curl http://localhost:5002/health || curl http://localhost:5003/health"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "araç takibi",
+    "araç bakımı",
+    "AI",
+    "yapay zeka",
+    "oto servis",
+    "araç sağlığı"
+  ],
+  "author": "OtoTakibim Team",
+  "license": "MIT"
+}

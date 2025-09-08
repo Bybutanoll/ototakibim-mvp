@@ -1,135 +1,221 @@
-# OtoTakibim - AI Destekli Oto Servis Yönetim Sistemi
+# 🚗 OtoTakibim - AI Destekli Araç Sağlık Asistanı
 
-Türkiye'nin en gelişmiş AI destekli oto servis yönetim platformu. Modern teknolojiler kullanılarak geliştirilmiş, enterprise seviyede performans ve güvenlik sunan kapsamlı bir çözüm.
+OtoTakibim, oto servisler için geliştirilmiş kapsamlı bir araç takip ve yönetim sistemidir. Yapay zeka destekli özellikleri ile araç bakımını optimize eder, maliyetleri düşürür ve müşteri memnuniyetini artırır.
 
-## 🚀 Özellikler
+## ✨ Özellikler
 
-### 🎯 Ana Modüller
-- **Müşteri Yönetimi**: Kapsamlı müşteri bilgi sistemi
-- **Araç Takibi**: Detaylı araç geçmişi ve bakım kayıtları
-- **İş Emri Yönetimi**: Tam süreç takibi ve optimizasyon
-- **Randevu Sistemi**: Akıllı randevu planlama
-- **Stok Yönetimi**: Otomatik stok takibi ve uyarılar
-- **Ödeme Sistemi**: Entegre ödeme çözümleri
-- **Raporlama**: Detaylı analitik ve raporlar
+### 🏢 Multi-Tenant SaaS Platform
+- **Çoklu İşletme Desteği**: Her oto servis kendi verilerini güvenle yönetir
+- **Özelleştirilebilir Branding**: Kendi logo ve renklerinizi kullanın
+- **Bağımsız Veri Yönetimi**: Her tenant'ın verileri izole edilmiştir
+
+### 🔐 Güvenlik ve Yetkilendirme
+- **JWT Tabanlı Authentication**: Güvenli kullanıcı girişi
+- **Role-Based Access Control (RBAC)**: Sahip, Yönetici, Teknisyen rolleri
+- **API Rate Limiting**: DDoS koruması ve güvenlik
+- **Data Encryption**: Veriler şifrelenerek saklanır
+
+### 🚗 Araç Yönetimi
+- **Kapsamlı Araç Kayıtları**: Marka, model, yıl, VIN, kilometre
+- **Bakım Geçmişi**: Detaylı bakım kayıtları ve fotoğraflar
+- **Araç Durumu Takibi**: Aktif, bakımda, satıldı durumları
+- **Müşteri Bağlantısı**: Araç-müşteri ilişkisi yönetimi
+
+### 🔧 İş Emri Yönetimi
+- **Detaylı İş Tanımları**: Açıklama, öncelik, tahmini maliyet
+- **Teknisyen Atama**: İş emirlerini teknisyenlere atama
+- **Durum Takibi**: Beklemede, devam ediyor, tamamlandı, iptal
+- **Maliyet Hesaplama**: Tahmini ve gerçek maliyet karşılaştırması
+
+### 👥 Müşteri Yönetimi
+- **Kapsamlı Müşteri Profilleri**: Kişisel bilgiler, iletişim, adres
+- **İletişim Geçmişi**: E-posta, SMS, telefon kayıtları
+- **Araç Geçmişi**: Müşterinin tüm araçları
+- **Memnuniyet Takibi**: Müşteri değerlendirmeleri
+
+### 💳 Abonelik Yönetimi
+- **3 Farklı Plan**: Başlangıç, Profesyonel, Kurumsal
+- **Kullanım Limitleri**: İş emri, kullanıcı, depolama, API çağrı limitleri
+- **Stripe Entegrasyonu**: Güvenli ödeme işlemleri
+- **Otomatik Faturalandırma**: Aylık/yıllık faturalandırma
+
+### 📊 Raporlama ve Analitik
+- **Finansal Raporlar**: Gelir, gider, kâr analizleri
+- **Operasyonel Raporlar**: İş emri, teknisyen performansı
+- **Müşteri Analitikleri**: Müşteri memnuniyeti, sadakat
+- **Trend Analizleri**: Zaman bazlı performans analizleri
+
+### 📱 Modern UI/UX
+- **Responsive Tasarım**: Mobil, tablet, desktop uyumlu
+- **PWA Desteği**: Progressive Web App özellikleri
+- **Dark/Light Mode**: Tema seçenekleri
+- **Accessibility**: Erişilebilirlik standartları
+
+### 🔔 Bildirim Sistemi
+- **E-posta Bildirimleri**: Otomatik e-posta gönderimi
+- **SMS Bildirimleri**: NetGSM entegrasyonu
+- **WhatsApp Bildirimleri**: WhatsApp Business API
+- **Push Bildirimleri**: Mobil uygulama bildirimleri
 
 ### 🤖 AI Destekli Özellikler
-- **Akıllı Tanı**: Otomatik arıza tespiti
-- **Bakım Tahmini**: Makine öğrenmesi ile bakım öngörüsü
-- **Fiyat Optimizasyonu**: Dinamik fiyatlandırma
-- **Müşteri Analizi**: Davranış analizi ve öneriler
+- **Öngörülü Bakım**: Makine öğrenmesi ile bakım tahmini
+- **Anomali Tespiti**: Olağandışı durumları tespit etme
+- **Akıllı Öneriler**: Bakım ve onarım önerileri
+- **Otomatik Kategorizasyon**: İş emirlerini otomatik kategorize etme
 
-### 📱 Modern Teknoloji
-- **PWA Desteği**: Mobil uygulama deneyimi
-- **Real-time Updates**: Anlık güncellemeler
-- **Offline Çalışma**: İnternet bağlantısı olmadan çalışma
-- **Responsive Design**: Tüm cihazlarda mükemmel deneyim
-
-## 🛠️ Teknoloji Stack
-
-### Frontend
-- **Next.js 15** - React framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Utility-first CSS
-- **Framer Motion** - Animasyonlar
-- **Zustand** - State management
-- **React Query** - Server state management
-- **PWA** - Progressive Web App
+## 🏗️ Teknoloji Stack
 
 ### Backend
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **MongoDB** - NoSQL database
-- **JWT** - Authentication
-- **Stripe** - Payment processing
+- **Node.js**: JavaScript runtime
+- **Express.js**: Web framework
+- **TypeScript**: Type-safe JavaScript
+- **MongoDB**: NoSQL veritabanı
+- **Mongoose**: MongoDB ODM
+- **Redis**: Cache ve session store
+- **JWT**: Authentication
+- **Stripe**: Payment processing
 
-### DevOps & Deployment
-- **Docker** - Containerization
-- **Nginx** - Reverse proxy
-- **SSL/TLS** - Security
-- **CI/CD** - Automated deployment
+### Frontend
+- **Next.js 14**: React framework
+- **React 18**: UI library
+- **TypeScript**: Type-safe JavaScript
+- **Tailwind CSS**: Utility-first CSS
+- **Framer Motion**: Animation library
+- **React Query**: Data fetching
+- **Zustand**: State management
 
-## 📦 Kurulum
+### DevOps & Infrastructure
+- **Docker**: Containerization
+- **Docker Compose**: Multi-container orchestration
+- **Nginx**: Reverse proxy ve load balancer
+- **Prometheus**: Monitoring
+- **Grafana**: Visualization
+- **ELK Stack**: Logging
+- **Let's Encrypt**: SSL certificates
+
+## 🚀 Hızlı Başlangıç
 
 ### Gereksinimler
-- Node.js 18+
+- Node.js 18.0+
 - MongoDB 6.0+
+- Redis 7.0+
 - Docker (opsiyonel)
 
-### Geliştirme Ortamı
+### Kurulum
 
+1. **Projeyi klonlayın:**
 ```bash
-# Repository'yi klonlayın
 git clone https://github.com/your-username/ototakibim.git
 cd ototakibim
+```
 
-# Bağımlılıkları yükleyin
-cd frontend && npm install
-cd ../backend && npm install
+2. **Bağımlılıkları yükleyin:**
+```bash
+# Backend
+cd backend
+npm install
 
-# Environment dosyalarını oluşturun
-cp .env.example .env
+# Frontend
+cd ../frontend
+npm install
+```
 
-# Geliştirme sunucularını başlatın
+3. **Environment dosyalarını oluşturun:**
+```bash
+# Backend
+cp .env.example .env.development
+
+# Frontend
+cp .env.example .env.local
+```
+
+4. **Veritabanlarını başlatın:**
+```bash
+# MongoDB
+mongod
+
+# Redis
+redis-server
+```
+
+5. **Uygulamaları başlatın:**
+```bash
+# Backend (Terminal 1)
+cd backend
+npm run dev
+
+# Frontend (Terminal 2)
+cd frontend
 npm run dev
 ```
 
-### Docker ile Kurulum
-
-```bash
-# Tüm servisleri başlatın
-docker-compose up -d
-
-# Logları takip edin
-docker-compose logs -f
+6. **Tarayıcıda açın:**
+```
+Frontend: http://localhost:3000
+Backend API: http://localhost:5000
 ```
 
-## 🚀 Deployment
+## 📖 Dokümantasyon
 
-### Production Build
+- **[API Dokümantasyonu](./API_DOCUMENTATION.md)**: Tüm API endpoint'leri
+- **[Kullanıcı Kılavuzu](./USER_GUIDE.md)**: Kullanıcı rehberi
+- **[Geliştirici Rehberi](./DEVELOPER_GUIDE.md)**: Geliştirme rehberi
+- **[Deployment Rehberi](./DEPLOYMENT_GUIDE.md)**: Production deployment
+
+## 🧪 Test
 
 ```bash
-# Frontend build
+# Backend testleri
+cd backend
+npm test
+
+# Frontend testleri
 cd frontend
-npm run build:prod
+npm test
 
-# Backend build
-cd ../backend
-npm run build
+# Tüm testler
+npm run test:all
 ```
 
-### Performance Monitoring
+## 📦 Production Deployment
 
+### Docker ile Deployment
 ```bash
-# Bundle analizi
-npm run analyze
-
-# Type checking
-npm run type-check
+# Production build
+docker-compose -f docker-compose.production.yml up -d
 ```
 
-## 📊 Performance Metrikleri
+### Manuel Deployment
+```bash
+# Deployment script'ini çalıştırın
+chmod +x deploy.sh
+./deploy.sh
+```
 
-- **Lighthouse Score**: 95+
-- **First Contentful Paint**: <1.2s
-- **Largest Contentful Paint**: <2.5s
-- **Cumulative Layout Shift**: <0.1
-- **Bundle Size**: <500KB gzipped
+## 🔧 Konfigürasyon
 
-## 🔒 Güvenlik
+### Environment Variables
 
-- **Content Security Policy** - XSS koruması
-- **JWT Authentication** - Güvenli kimlik doğrulama
-- **Input Sanitization** - Veri temizleme
-- **Rate Limiting** - API koruması
-- **HTTPS** - Şifreli iletişim
+#### Backend (.env)
+```bash
+NODE_ENV=production
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/ototakibim
+JWT_SECRET=your-jwt-secret
+STRIPE_SECRET_KEY=sk_live_your_stripe_key
+```
 
-## 📱 PWA Özellikleri
+#### Frontend (.env.local)
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_key
+```
 
-- **Offline Çalışma** - İnternet olmadan kullanım
-- **Push Notifications** - Anlık bildirimler
-- **App-like Experience** - Native app deneyimi
-- **Background Sync** - Arka plan senkronizasyonu
+## 📊 Monitoring
+
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3001
+- **Kibana**: http://localhost:5601
 
 ## 🤝 Katkıda Bulunma
 
@@ -145,22 +231,19 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 ## 📞 İletişim
 
-- **Website**: [ototakibim.com](https://ototakibim.com)
+- **Website**: https://ototakibim.com
 - **Email**: info@ototakibim.com
-- **LinkedIn**: [OtoTakibim](https://linkedin.com/company/ototakibim)
+- **Support**: support@ototakibim.com
+- **GitHub**: https://github.com/ototakibim
 
 ## 🙏 Teşekkürler
 
-Bu proje aşağıdaki açık kaynak projeleri kullanmaktadır:
-- Next.js
-- React
-- Tailwind CSS
-- Framer Motion
-- Zustand
-- React Query
-- MongoDB
-- Express.js
+- [Next.js](https://nextjs.org) - React framework
+- [MongoDB](https://mongodb.com) - Database
+- [Stripe](https://stripe.com) - Payment processing
+- [Tailwind CSS](https://tailwindcss.com) - CSS framework
+- [Vercel](https://vercel.com) - Deployment platform
 
 ---
 
-**OtoTakibim** - Türkiye'nin en gelişmiş oto servis yönetim platformu 🚗✨
+**OtoTakibim** ile araç bakımınızı dijitalleştirin! 🚗✨

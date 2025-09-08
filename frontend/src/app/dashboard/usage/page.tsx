@@ -7,6 +7,7 @@ import { UsageAlerts } from '@/components/usage/UsageAlerts';
 import { UsageStatistics } from '@/components/usage/UsageStatistics';
 import { Button } from '@/components/atoms/Button';
 import { Icon } from '@/components/atoms/Icon';
+import { BarChart3, AlertTriangle, TrendingUp } from 'lucide-react';
 
 type TabType = 'dashboard' | 'alerts' | 'statistics';
 
@@ -14,9 +15,9 @@ export default function UsagePage() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
 
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'bar-chart-3' },
-    { id: 'alerts', label: 'Uyarılar', icon: 'alert-triangle' },
-    { id: 'statistics', label: 'İstatistikler', icon: 'trending-up' }
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'alerts', label: 'Uyarılar', icon: AlertTriangle },
+    { id: 'statistics', label: 'İstatistikler', icon: TrendingUp }
   ];
 
   const renderTabContent = () => {
@@ -53,7 +54,7 @@ export default function UsagePage() {
                 variant={activeTab === tab.id ? 'default' : 'ghost'}
                 className="flex items-center space-x-2 px-1 py-4 border-b-2 border-transparent hover:border-gray-300"
               >
-                <Icon name={tab.icon as any} className="h-4 w-4" />
+                <Icon icon={tab.icon} className="h-4 w-4" />
                 <span>{tab.label}</span>
               </Button>
             ))}

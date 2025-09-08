@@ -139,6 +139,28 @@ redis-server
 ```
 
 5. **Uygulamaları başlatın:**
+
+**Windows PowerShell için:**
+```powershell
+# PowerShell script ile (önerilen)
+.\start-dev.ps1
+
+# Veya manuel olarak
+cd frontend
+npm run dev
+```
+
+**Windows Command Prompt için:**
+```cmd
+# Batch file ile
+start-dev.bat
+
+# Veya manuel olarak
+cd frontend
+npm run dev
+```
+
+**Linux/Mac için:**
 ```bash
 # Backend (Terminal 1)
 cd backend

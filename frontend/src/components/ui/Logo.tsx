@@ -1,10 +1,9 @@
 'use client';
 
 import React, { forwardRef } from 'react';
-import { motion, MotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-export interface LogoProps extends Omit<MotionProps, 'children'> {
+export interface LogoProps {
   variant?: 'full' | 'icon' | 'compact' | 'mini';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
   animated?: boolean;
@@ -29,6 +28,16 @@ const variantMap = {
   compact: '/assets/logo/ototakibim-compact.svg',
   mini: '/assets/logo/ototakibim-mini.svg',
 } as const;
+
+// Fallback logo component
+const FallbackLogo = ({ size }: { size: number }) => (
+  <div 
+    className="bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold"
+    style={{ width: size, height: size }}
+  >
+    <span style={{ fontSize: size * 0.4 }}>OT</span>
+  </div>
+);
 
 export const Logo = forwardRef<HTMLDivElement, LogoProps>(
   (
@@ -64,52 +73,11 @@ export const Logo = forwardRef<HTMLDivElement, LogoProps>(
         aria-label={ariaLabel}
         tabIndex={interactive ? 0 : undefined}
       >
-        <img
-          src={logoSrc}
-          alt="OtoTakibim Logo"
-          className="w-full h-full object-contain"
-          draggable={false}
-        />
+        <FallbackLogo size={logoSize} />
       </div>
     );
 
-    if (!animated) {
-      return logoElement;
-    }
-
-    return (
-      <motion.div
-        {...motionProps}
-        ref={ref}
-        className={baseClasses}
-        style={{ width: logoSize, height: logoSize }}
-        onClick={interactive ? onClick : undefined}
-        role={interactive ? 'button' : 'img'}
-        aria-label={ariaLabel}
-        tabIndex={interactive ? 0 : undefined}
-        whileHover={interactive ? { scale: 1.05 } : undefined}
-        whileTap={interactive ? { scale: 0.95 } : undefined}
-        transition={{
-          type: 'spring',
-          stiffness: 300,
-          damping: 20,
-        }}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-      >
-        <motion.img
-          src={logoSrc}
-          alt="OtoTakibim Logo"
-          className="w-full h-full object-contain"
-          draggable={false}
-          whileHover={interactive ? { 
-            filter: 'brightness(1.1) drop-shadow(0 0 8px rgba(59, 130, 246, 0.3))'
-          } : undefined}
-          transition={{ duration: 0.2 }}
-        />
-      </motion.div>
-    );
+    return logoElement;
   }
 );
 

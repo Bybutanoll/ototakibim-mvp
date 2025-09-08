@@ -1,298 +1,187 @@
-import React, { useState } from 'react';
+"use client";
+
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Button, Badge } from '../atoms';
-import { Card } from '../atoms';
-import { Check, X, Star, Zap, Crown } from 'lucide-react';
+import { Check, Star, Zap, Crown } from 'lucide-react';
 
-export interface PricingSectionProps {
-  className?: string;
-}
+const plans = [
+  {
+    name: 'Starter',
+    price: '₺0',
+    period: '/ay',
+    description: 'Küçük servisler için ideal',
+    icon: Zap,
+    color: 'from-gray-600 to-gray-700',
+    bgColor: 'bg-gray-50',
+    borderColor: 'border-gray-200',
+    features: [
+      '3 Araç Takibi',
+      'Temel İş Emirleri',
+      'Email Desteği',
+      'Temel Raporlar',
+      'Mobil Uygulama'
+    ],
+    cta: 'Ücretsiz Başla',
+    ctaStyle: 'bg-gray-900 hover:bg-gray-800 text-white',
+    popular: false
+  },
+  {
+    name: 'Growth',
+    price: '₺99',
+    period: '/ay',
+    description: 'Büyüyen servisler için',
+    icon: Star,
+    color: 'from-blue-600 to-indigo-600',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    features: [
+      '10 Araç Takibi',
+      'AI Destekli Analiz',
+      'Gelişmiş Raporlar',
+      'e-Fatura Entegrasyonu',
+      'Öncelikli Destek',
+      'API Erişimi',
+      'Özel Entegrasyonlar'
+    ],
+    cta: '14 Gün Ücretsiz',
+    ctaStyle: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white',
+    popular: true
+  },
+  {
+    name: 'Enterprise',
+    price: '₺299',
+    period: '/ay',
+    description: 'Büyük servisler için',
+    icon: Crown,
+    color: 'from-purple-600 to-violet-600',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200',
+    features: [
+      'Sınırsız Araç',
+      'Özel AI Modelleri',
+      'Özel Raporlar',
+      '7/24 Telefon Desteği',
+      'Özel Eğitim',
+      'SLA Garantisi',
+      'Özel Geliştirmeler',
+      'Dedicated Account Manager'
+    ],
+    cta: 'İletişime Geç',
+    ctaStyle: 'bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white',
+    popular: false
+  }
+];
 
-const PricingSection: React.FC<PricingSectionProps> = ({ className = '' }) => {
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
-
-  const plans = [
-    {
-      name: 'Starter',
-      description: 'Küçük işletmeler için temel özellikler',
-      monthlyPrice: 99,
-      yearlyPrice: 990,
-      icon: Zap,
-      color: 'blue',
-      popular: false,
-      features: [
-        'Temel dashboard',
-        'Araç yönetimi',
-        'Basit raporlar',
-        'Email bildirimleri',
-        'Mobil uygulama erişimi',
-        '50 iş emri/ay',
-        '2 kullanıcı',
-        '1GB depolama',
-        '1000 API çağrısı/ay'
-      ],
-      limitations: [
-        'AI özellikleri yok',
-        'Gelişmiş raporlar yok',
-        'SMS bildirimleri yok',
-        'Entegrasyonlar yok'
-      ]
-    },
-    {
-      name: 'Professional',
-      description: 'Büyüyen işletmeler için gelişmiş özellikler',
-      monthlyPrice: 299,
-      yearlyPrice: 2990,
-      icon: Star,
-      color: 'purple',
-      popular: true,
-      features: [
-        'Tüm Starter özellikleri',
-        'AI destekli tanı',
-        'Gelişmiş raporlar',
-        'SMS bildirimleri',
-        'Entegrasyonlar',
-        'Öncelikli destek',
-        'Toplu veri aktarımı',
-        '500 iş emri/ay',
-        '10 kullanıcı',
-        '5GB depolama',
-        '10,000 API çağrısı/ay'
-      ],
-      limitations: [
-        'API erişimi sınırlı',
-        'White-label yok',
-        'Özel markalama yok'
-      ]
-    },
-    {
-      name: 'Enterprise',
-      description: 'Büyük işletmeler için sınırsız özellikler',
-      monthlyPrice: 799,
-      yearlyPrice: 7990,
-      icon: Crown,
-      color: 'gold',
-      popular: false,
-      features: [
-        'Tüm Professional özellikleri',
-        'Sınırsız kullanım',
-        'API erişimi',
-        'White-label çözüm',
-        'Özel markalama',
-        'Gelişmiş analitik',
-        'Yedekleme ve geri yükleme',
-        '7/24 öncelikli destek',
-        'Sınırsız iş emri',
-        'Sınırsız kullanıcı',
-        'Sınırsız depolama',
-        'Sınırsız API çağrısı'
-      ],
-      limitations: []
-    }
-  ];
-
-  const getColorClasses = (color: string) => {
-    const colors = {
-      blue: 'bg-blue-500 text-white',
-      purple: 'bg-purple-500 text-white',
-      gold: 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
-    };
-    return colors[color as keyof typeof colors] || 'bg-gray-500 text-white';
-  };
-
-  const getBorderColor = (color: string, popular: boolean) => {
-    if (popular) {
-      return 'border-purple-500 ring-2 ring-purple-200';
-    }
-    const colors = {
-      blue: 'border-blue-200',
-      purple: 'border-purple-200',
-      gold: 'border-yellow-200'
-    };
-    return colors[color as keyof typeof colors] || 'border-gray-200';
-  };
-
+export default function PricingSection() {
   return (
-    <section className={`py-20 bg-gray-50 ${className}`}>
+    <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
-          >
-            Basit ve Şeffaf Fiyatlandırma
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            viewport={{ once: true }}
-            className="text-xl text-gray-600 max-w-3xl mx-auto mb-8"
-          >
-            İhtiyacınıza uygun planı seçin. İstediğiniz zaman değiştirebilir veya iptal edebilirsiniz.
-          </motion.p>
-
-          {/* Billing Toggle */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="flex items-center justify-center space-x-4 mb-8"
-          >
-            <span className={`text-sm font-medium ${billingPeriod === 'monthly' ? 'text-gray-900' : 'text-gray-500'}`}>
-              Aylık
-            </span>
-            <button
-              onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
-              className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  billingPeriod === 'yearly' ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-            <span className={`text-sm font-medium ${billingPeriod === 'yearly' ? 'text-gray-900' : 'text-gray-500'}`}>
-              Yıllık
-            </span>
-            {billingPeriod === 'yearly' && (
-              <Badge text="%17 İndirim" color="success" />
-            )}
-          </motion.div>
-        </div>
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            Basit ve{' '}
+            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Şeffaf
+            </span>{' '}
+            Fiyatlandırma
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            İhtiyacınıza uygun planı seçin ve hemen başlayın. 
+            Hiçbir gizli ücret yok, istediğiniz zaman iptal edebilirsiniz.
+          </p>
+        </motion.div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {plans.map((plan, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className={`relative ${plan.popular ? 'md:-mt-8' : ''}`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
-                  <Badge text="En Popüler" color="success" />
-                </div>
-              )}
-
-              <Card
-                className={`h-full ${getBorderColor(plan.color, plan.popular)} ${
-                  plan.popular ? 'shadow-xl' : 'shadow-lg'
-                }`}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {plans.map((plan, index) => {
+            const IconComponent = plan.icon;
+            return (
+              <motion.div
+                key={plan.name}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className={`relative ${plan.popular ? 'md:-mt-8' : ''}`}
               >
-                <div className="text-center mb-8">
-                  <div className={`inline-flex p-3 rounded-lg ${getColorClasses(plan.color)} mb-4`}>
-                    <plan.icon className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-gray-600 mb-6">{plan.description}</p>
-                  
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold text-gray-900">
-                      ₺{billingPeriod === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
-                    </span>
-                    <span className="text-gray-600 ml-1">
-                      /{billingPeriod === 'monthly' ? 'ay' : 'yıl'}
-                    </span>
-                  </div>
-
-                  <Button
-                    variant={plan.popular ? 'primary' : 'outline'}
-                    size="lg"
-                    className="w-full mb-6"
-                  >
-                    {plan.name === 'Enterprise' ? 'İletişime Geçin' : 'Başlayın'}
-                  </Button>
-                </div>
-
-                {/* Features */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 mb-4">Dahil Olanlar:</h4>
-                  {plan.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-start">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">{feature}</span>
+                {/* Popular Badge */}
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
+                      En Popüler
                     </div>
-                  ))}
-                  
-                  {plan.limitations.length > 0 && (
-                    <>
-                      <h4 className="font-semibold text-gray-900 mb-4 mt-6">Dahil Olmayanlar:</h4>
-                      {plan.limitations.map((limitation, limitationIndex) => (
-                        <div key={limitationIndex} className="flex items-start">
-                          <X className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
-                          <span className="text-gray-500 text-sm">{limitation}</span>
-                        </div>
-                      ))}
-                    </>
-                  )}
+                  </div>
+                )}
+
+                <div className={`bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 ${plan.borderColor} h-full ${plan.popular ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
+                  {/* Plan Header */}
+                  <div className="text-center mb-8">
+                    <div className={`w-16 h-16 ${plan.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                      <IconComponent className={`w-8 h-8 bg-gradient-to-r ${plan.color} bg-clip-text text-transparent`} />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                    <p className="text-gray-600 mb-4">{plan.description}</p>
+                    <div className="flex items-baseline justify-center">
+                      <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
+                      <span className="text-gray-600 ml-1">{plan.period}</span>
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <div className="space-y-4 mb-8">
+                    {plan.features.map((feature, featureIndex) => (
+                      <div key={featureIndex} className="flex items-center">
+                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* CTA Button */}
+                  <button className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${plan.ctaStyle}`}>
+                    {plan.cta}
+                  </button>
                 </div>
-              </Card>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* FAQ */}
+        {/* Bottom Note */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
           viewport={{ once: true }}
-          className="mt-20 text-center"
+          className="text-center mt-12"
         >
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            Sıkça Sorulan Sorular
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">
-                Plan değiştirebilir miyim?
-              </h4>
-              <p className="text-gray-600 text-sm">
-                Evet, istediğiniz zaman planınızı yükseltebilir veya düşürebilirsiniz. 
-                Değişiklikler anında geçerli olur.
-              </p>
-            </div>
-            <div className="text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">
-                Ücretsiz deneme var mı?
-              </h4>
-              <p className="text-gray-600 text-sm">
-                Tüm planlar için 14 gün ücretsiz deneme sunuyoruz. 
-                Kredi kartı bilgisi gerektirmez.
-              </p>
-            </div>
-            <div className="text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">
-                İptal edebilir miyim?
-              </h4>
-              <p className="text-gray-600 text-sm">
-                Evet, istediğiniz zaman iptal edebilirsiniz. 
-                Verileriniz 30 gün boyunca saklanır.
-              </p>
-            </div>
-            <div className="text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">
-                Destek alabilir miyim?
-              </h4>
-              <p className="text-gray-600 text-sm">
-                Tüm planlar email desteği içerir. 
-                Professional ve Enterprise planlar öncelikli destek alır.
-              </p>
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 max-w-4xl mx-auto">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Tüm Planlar İçin
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+              <div className="flex items-center justify-center">
+                <Check className="w-4 h-4 text-green-500 mr-2" />
+                <span>14 gün ücretsiz deneme</span>
+              </div>
+              <div className="flex items-center justify-center">
+                <Check className="w-4 h-4 text-green-500 mr-2" />
+                <span>İstediğiniz zaman iptal</span>
+              </div>
+              <div className="flex items-center justify-center">
+                <Check className="w-4 h-4 text-green-500 mr-2" />
+                <span>7/24 teknik destek</span>
+              </div>
             </div>
           </div>
         </motion.div>
       </div>
     </section>
   );
-};
-
-export default PricingSection;
+}

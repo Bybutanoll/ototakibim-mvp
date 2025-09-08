@@ -1,137 +1,169 @@
+"use client";
+
 import React from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Button } from '../atoms';
-import { ArrowRight, Play, Star, Users, Award } from 'lucide-react';
+import { ArrowRight, Play, CheckCircle } from 'lucide-react';
 
-export interface HeroSectionProps {
-  className?: string;
-}
-
-const HeroSection: React.FC<HeroSectionProps> = ({ className = '' }) => {
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  };
-
-  const staggerChildren = {
-    animate: {
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
+export default function HeroSection() {
   return (
-    <section className={`relative bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden ${className}`}>
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       {/* Background Elements */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-      <div className="absolute top-0 left-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-      <div className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-blob" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-blob animation-delay-2000" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-blob animation-delay-4000" />
+      </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-        <motion.div
-          variants={staggerChildren}
-          initial="initial"
-          animate="animate"
-          className="text-center"
-        >
-          {/* Badge */}
-          <motion.div variants={fadeInUp} className="mb-8">
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
-              <Star className="w-4 h-4 mr-2 fill-current" />
-              Türkiye'nin İlk AI Destekli Araç Sağlık Asistanı
-            </div>
-          </motion.div>
-
-          {/* Main Heading */}
-          <motion.h1
-            variants={fadeInUp}
-            className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6"
-          >
-            Araç Bakımınızı
-            <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              AI ile Yönetin
-            </span>
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p
-            variants={fadeInUp}
-            className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed"
-          >
-            Yapay zeka destekli tanı, öngörülü bakım ve akıllı raporlama ile 
-            araç bakım maliyetlerinizi %40 azaltın.
-          </motion.p>
-
-          {/* CTA Buttons */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
           <motion.div
-            variants={fadeInUp}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center lg:text-left"
           >
-            <Button
-              variant="primary"
-              size="lg"
-              className="px-8 py-4 text-lg font-semibold"
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
             >
-              Ücretsiz Deneyin
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="px-8 py-4 text-lg font-semibold"
+              AI Destekli{' '}
+              <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                Araç Sağlık
+              </span>{' '}
+              Asistanı
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto lg:mx-0"
             >
-              <Play className="w-5 h-5 mr-2" />
-              Demo İzleyin
-            </Button>
+              Araç bakımınızı takip edin, sorunları önceden tespit edin ve servis maliyetlerinizi düşürün. 
+              Türkiye'nin ilk yapay zeka destekli araç sağlık asistanı.
+            </motion.p>
+
+            {/* Trust Indicators */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="flex flex-wrap items-center justify-center lg:justify-start gap-6 mb-8"
+            >
+              <div className="flex items-center text-gray-300">
+                <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
+                <span className="text-sm">KVKK Uyumlu</span>
+              </div>
+              <div className="flex items-center text-gray-300">
+                <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
+                <span className="text-sm">e-Fatura Hazır</span>
+              </div>
+              <div className="flex items-center text-gray-300">
+                <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
+                <span className="text-sm">7/24 Destek</span>
+              </div>
+            </motion.div>
+
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+            >
+              <Link
+                href="/register"
+                className="group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-2xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 hover:-translate-y-1"
+              >
+                <span>14 Gün Ücretsiz Başla</span>
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              
+              <button className="group inline-flex items-center justify-center px-8 py-4 border-2 border-white/20 text-white font-semibold rounded-2xl hover:bg-white/10 transition-all duration-300 hover:border-white/40">
+                <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span>Demo İzle</span>
+              </button>
+            </motion.div>
           </motion.div>
 
-          {/* Stats */}
+          {/* Right Content - Device Mockup */}
           <motion.div
-            variants={fadeInUp}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="relative"
           >
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">500+</div>
-              <div className="text-gray-600">Aktif İşletme</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-purple-600 mb-2">%40</div>
-              <div className="text-gray-600">Maliyet Azalması</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-green-600 mb-2">24/7</div>
-              <div className="text-gray-600">AI Destek</div>
+            <div className="relative mx-auto max-w-md">
+              {/* Device Frame */}
+              <div className="relative bg-gray-900 rounded-[2.5rem] p-2 shadow-2xl">
+                <div className="bg-gray-800 rounded-[2rem] overflow-hidden">
+                  {/* Screen Content */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 h-96">
+                    <div className="space-y-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">OT</span>
+                        </div>
+                        <div className="text-sm font-medium text-gray-700">Dashboard</div>
+                      </div>
+                      
+                      {/* Stats Cards */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <div className="text-xs text-gray-500">Toplam Araç</div>
+                          <div className="text-lg font-bold text-gray-900">12</div>
+                        </div>
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <div className="text-xs text-gray-500">Aktif İş Emri</div>
+                          <div className="text-lg font-bold text-green-600">3</div>
+                        </div>
+                      </div>
+                      
+                      {/* Chart Placeholder */}
+                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                        <div className="text-xs text-gray-500 mb-2">Aylık Performans</div>
+                        <div className="flex items-end space-x-1 h-16">
+                          {[40, 60, 45, 80, 70, 90, 85].map((height, index) => (
+                            <div
+                              key={index}
+                              className="bg-gradient-to-t from-blue-500 to-indigo-500 rounded-sm flex-1"
+                              style={{ height: `${height}%` }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Floating Elements */}
+              <motion.div
+                animate={{ y: [-10, 10, -10] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-4 -right-4 bg-white rounded-xl p-3 shadow-lg"
+              >
+                <div className="text-xs text-gray-600">Yeni Bildirim</div>
+                <div className="text-sm font-semibold text-gray-900">Bakım Hatırlatması</div>
+              </motion.div>
+              
+              <motion.div
+                animate={{ y: [10, -10, 10] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute -bottom-4 -left-4 bg-green-500 text-white rounded-xl p-3 shadow-lg"
+              >
+                <div className="text-xs">Gelir Artışı</div>
+                <div className="text-sm font-semibold">+%23</div>
+              </motion.div>
             </div>
           </motion.div>
-
-          {/* Trust Indicators */}
-          <motion.div
-            variants={fadeInUp}
-            className="mt-16 pt-8 border-t border-gray-200"
-          >
-            <p className="text-sm text-gray-500 mb-6">Güvenilen İşletmeler</p>
-            <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
-              <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-500">Toyota Servis</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Award className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-500">BMW Yetkili</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Star className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-500">Mercedes-Benz</span>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
-};
-
-export default HeroSection;
+}

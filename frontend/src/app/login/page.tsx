@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, Car, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { LogoLogin } from '@/components/ui/Logo';
+import { motion } from 'framer-motion';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({

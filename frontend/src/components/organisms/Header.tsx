@@ -39,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`bg-white border-b border-gray-200 px-4 py-3 ${className}`}>
+    <header className={`bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-sticky ${className}`}>
       <div className="flex items-center justify-between">
         {/* Left side */}
         <div className="flex items-center space-x-4">
@@ -75,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({
             </button>
             
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-dropdown">
                 <div className="p-4 border-b border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900">Bildirimler</h3>
                 </div>
@@ -109,7 +109,7 @@ const Header: React.FC<HeaderProps> = ({
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-dropdown">
                 <div className="py-1">
                   <a
                     href="/dashboard/profile"

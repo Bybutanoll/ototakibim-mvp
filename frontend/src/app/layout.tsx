@@ -107,8 +107,18 @@ export default function RootLayout({
         <link rel="preconnect" href="https://ototakibim-mvp.onrender.com" />
       </head>
       <body className={inter.className}>
-        <div id="portal-root" className="relative z-50" />
-        {children}
+        {/* Portal root for modals, dropdowns, etc. */}
+        <div id="portal-root" className="z-modal" />
+        
+        {/* Main app structure */}
+        <div className="min-h-screen bg-gray-50">
+          <ClientWrapper>
+            {children}
+          </ClientWrapper>
+        </div>
+        
+        {/* Performance monitoring */}
+        <PerformanceMonitor />
       </body>
     </html>
   );

@@ -107,29 +107,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://ototakibim-mvp.onrender.com" />
       </head>
       <body className={inter.className}>
-        <PWAProvider>
-          <QueryProvider>
-            <AuthProvider>
-              <TenantProvider>
-                <SubscriptionProvider>
-                  <UsageMonitoringProvider>
-                    <AppointmentProvider>
-                      <PaymentProvider>
-                        <ClientWrapper>
-                          {children}
-                        </ClientWrapper>
-                        <PerformanceMonitor />
-                        
-                        {/* Portal container for modals, toasts, etc. */}
-                        <div id="portal-root" className="relative z-50" />
-                      </PaymentProvider>
-                    </AppointmentProvider>
-                  </UsageMonitoringProvider>
-                </SubscriptionProvider>
-              </TenantProvider>
-            </AuthProvider>
-          </QueryProvider>
-        </PWAProvider>
+        <div id="portal-root" className="relative z-50" />
+        {children}
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import Avatar from '../atoms/Avatar';
 import Button from '../atoms/Button';
 import Icon from '../atoms/Icon';
+import FocusTrap from '../utils/FocusTrap';
 import { 
   Bell, 
   Settings, 
@@ -46,7 +47,9 @@ const Header: React.FC<HeaderProps> = ({
           {showMenuButton && (
             <button
               onClick={onMenuToggle}
-              className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 lg:hidden"
+              className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 lg:hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label="Menüyü aç"
+              aria-expanded={false}
             >
               <Icon icon={Menu} size="md" />
             </button>
@@ -68,21 +71,29 @@ const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 relative"
+              className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label="Bildirimleri görüntüle"
+              aria-expanded={showNotifications}
             >
               <Icon icon={Bell} size="md" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
             </button>
             
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-dropdown">
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Bildirimler</h3>
+              <FocusTrap isActive={showNotifications} onEscape={() => setShowNotifications(false)}>
+                <div 
+                  className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-dropdown"
+                  role="dialog"
+                  aria-labelledby="notifications-title"
+                >
+                  <div className="p-4 border-b border-gray-200">
+                    <h3 id="notifications-title" className="text-lg font-semibold text-gray-900">Bildirimler</h3>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-gray-500 text-center">Yeni bildirim yok</p>
+                  </div>
                 </div>
-                <div className="p-4">
-                  <p className="text-gray-500 text-center">Yeni bildirim yok</p>
-                </div>
-              </div>
+              </FocusTrap>
             )}
           </div>
 
@@ -90,7 +101,9 @@ const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100"
+              className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label="Kullanıcı menüsünü aç"
+              aria-expanded={showUserMenu}
             >
               <Avatar
                 name={user ? `${user.firstName} ${user.lastName}` : 'User'}
@@ -109,32 +122,41 @@ const Header: React.FC<HeaderProps> = ({
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-dropdown">
-                <div className="py-1">
-                  <a
-                    href="/dashboard/profile"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <Icon icon={User} size="sm" className="mr-3" />
-                    Profil
-                  </a>
-                  <a
-                    href="/dashboard/settings"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <Icon icon={Settings} size="sm" className="mr-3" />
-                    Ayarlar
-                  </a>
-                  <hr className="my-1" />
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <Icon icon={LogOut} size="sm" className="mr-3" />
-                    Çıkış Yap
-                  </button>
+              <FocusTrap isActive={showUserMenu} onEscape={() => setShowUserMenu(false)}>
+                <div 
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-dropdown"
+                  role="menu"
+                  aria-labelledby="user-menu-button"
+                >
+                  <div className="py-1">
+                    <a
+                      href="/dashboard/profile"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                      role="menuitem"
+                    >
+                      <Icon icon={User} size="sm" className="mr-3" />
+                      Profil
+                    </a>
+                    <a
+                      href="/dashboard/settings"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                      role="menuitem"
+                    >
+                      <Icon icon={Settings} size="sm" className="mr-3" />
+                      Ayarlar
+                    </a>
+                    <hr className="my-1" />
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                      role="menuitem"
+                    >
+                      <Icon icon={LogOut} size="sm" className="mr-3" />
+                      Çıkış Yap
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </FocusTrap>
             )}
           </div>
         </div>

@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import Icon from '../atoms/Icon';
+import FocusTrap from '../utils/FocusTrap';
 import { 
   LayoutDashboard, 
   Wrench, 
@@ -145,15 +146,19 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-modal-backdrop lg:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-modal w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${className}`}
-      >
+      <FocusTrap isActive={isOpen} onEscape={onClose}>
+        <div
+          className={`fixed inset-y-0 left-0 z-modal w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+            isOpen ? 'translate-x-0' : '-translate-x-full'
+          } ${className}`}
+          role="navigation"
+          aria-label="Ana navigasyon menüsü"
+        >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 lg:hidden">
@@ -165,7 +170,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label="Menüyü kapat"
             >
               <Icon icon={X} size="md" />
             </button>
@@ -191,7 +197,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto" role="navigation" aria-label="Ana menü">
             {filteredNavigation.map((item) => {
               const IconComponent = item.icon;
               const active = isActive(item.href);
@@ -200,20 +206,22 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <a
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                     active
                       ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
+                  aria-current={active ? 'page' : undefined}
                 >
                   <IconComponent
                     className={`mr-3 h-5 w-5 flex-shrink-0 ${
                       active ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
                     }`}
+                    aria-hidden="true"
                   />
                   <span className="flex-1">{item.name}</span>
                   {item.badge && (
-                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" aria-label={`${item.badge} yeni`}>
                       {item.badge}
                     </span>
                   )}
@@ -230,7 +238,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </FocusTrap>
     </>
   );
 };

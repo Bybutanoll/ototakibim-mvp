@@ -177,23 +177,17 @@ export default function LoginPage() {
 
             {/* Auth Error */}
             {errors.auth && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-red-50 border border-red-200 rounded-xl p-4"
-              >
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                 <p className="text-sm text-red-600 text-center">
                   {errors.auth}
                 </p>
-              </motion.div>
+              </div>
             )}
 
             {/* Submit Button */}
-            <motion.button
+            <button
               type="submit"
               disabled={isSubmitting}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
               className={`w-full flex justify-center items-center space-x-2 py-3 px-4 border border-transparent rounded-xl font-medium text-white transition-all duration-200 ${
                 isSubmitting
                   ? 'bg-gray-400 cursor-not-allowed'
@@ -211,7 +205,7 @@ export default function LoginPage() {
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
-            </motion.button>
+            </button>
           </form>
 
           {/* Additional Links */}

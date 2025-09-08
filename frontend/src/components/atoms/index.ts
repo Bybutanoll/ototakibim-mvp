@@ -5,3 +5,4 @@ export { Icon } from './Icon';
 export { default as Avatar } from './Avatar';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Card } from './Card';
+export { default as Modal } from './Modal';

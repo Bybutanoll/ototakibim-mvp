@@ -40,25 +40,23 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            AI Destekli
-            <span className="text-indigo-600"> Araç Sağlık Asistanı</span>
+            OtoTakibim — Servis yönetimini tek panelde yönetin
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Araçlarınızı profesyonelce takip edin, bakım planlarını yönetin ve AI destekli 
-            sağlık asistanı ile sorunları önceden tespit edin.
+            Randevu, iş emri, teklif, e-Fatura ve tahsilat — Türkiye mevzuatına uygun, hızlı kurulum.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/register"
+              href="/demo"
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg text-lg font-medium"
             >
-              Ücretsiz Başla
+              Canlı Demo İste
             </Link>
             <Link
-              href="#features"
+              href="/register"
               className="border border-indigo-600 text-indigo-600 hover:bg-indigo-50 px-8 py-3 rounded-lg text-lg font-medium"
             >
-              Özellikleri Keşfet
+              14 Gün Ücretsiz
             </Link>
           </div>
         </div>
@@ -67,10 +65,10 @@ export default function HomePage() {
         <div id="features" className="mt-20">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Neden OtoTakibim?
+              3 Ana Fayda
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Modern araç yönetimi için ihtiyacınız olan tüm araçları tek platformda bulun.
+              Servis yönetiminde ihtiyacınız olan her şey tek platformda.
             </p>
           </div>
 
@@ -82,9 +80,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Akıllı Takip</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Gelir ↑</h3>
               <p className="text-gray-600">
-                Araçlarınızın durumunu gerçek zamanlı olarak takip edin ve bakım zamanlarını planlayın.
+                Randevu yönetimi ve iş emri takibi ile müşteri memnuniyetini artırın, gelirinizi yükseltin.
               </p>
             </div>
 
@@ -95,9 +93,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">AI Asistan</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Zaman Tasarrufu</h3>
               <p className="text-gray-600">
-                Yapay zeka destekli asistan ile araç sorunlarını önceden tespit edin ve çözüm önerileri alın.
+                Otomatik randevu hatırlatmaları, iş emri şablonları ve e-Fatura entegrasyonu ile zaman kazanın.
               </p>
             </div>
 
@@ -108,9 +106,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Maliyet Yönetimi</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Şeffaflık</h3>
               <p className="text-gray-600">
-                Bakım maliyetlerini takip edin, bütçe planlaması yapın ve tasarruf edin.
+                Müşterileriniz iş emirlerini takip edebilir, faturaları görüntüleyebilir ve ödeme yapabilir.
               </p>
             </div>
 

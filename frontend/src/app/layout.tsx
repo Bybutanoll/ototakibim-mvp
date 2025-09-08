@@ -119,6 +119,9 @@ export default function RootLayout({
                           {children}
                         </ClientWrapper>
                         <PerformanceMonitor />
+                        
+                        {/* Portal container for modals, toasts, etc. */}
+                        <div id="portal-root" className="relative z-50" />
                       </PaymentProvider>
                     </AppointmentProvider>
                   </UsageMonitoringProvider>
